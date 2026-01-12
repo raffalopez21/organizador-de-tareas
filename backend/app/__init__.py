@@ -14,9 +14,9 @@ def init_app():
     db.init_app(app)
   
     # Register blueprints
-    from backend.app.controllers.controllers_tarea import tarea_bp
-    from backend.app.controllers.controllers_usuario import usuario_bp
-    from backend.app.controllers.controllers_proyecto import proyecto_bp
+    from backend.app.controllers.controller_tarea import tarea_bp
+    from backend.app.controllers.controller_usuario import usuario_bp
+    from backend.app.controllers.controller_proyecto import proyecto_bp
     app.register_blueprint(tarea_bp, url_prefix='/api')
     app.register_blueprint(usuario_bp, url_prefix='/api')
     app.register_blueprint(proyecto_bp, url_prefix='/api')

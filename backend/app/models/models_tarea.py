@@ -1,4 +1,4 @@
-from ...database import DatabaseConnection 
+from ...database import DatabaseConnection
 
 class Tareas:
     def __init__(self, id=None, titulo=None, descripcion=None, status=None, fecha_recordatorio=None, usuario_id=None, proyecto_id=None):

@@ -64,4 +64,4 @@ class UsuarioController:
     def delete_usuario(usuario_id):
         query = "DELETE FROM usuarios WHERE id = %s"
         DatabaseConnection.execute_query(query, (usuario_id,))
-        return "", 204
+        return jsonify({"message": "Usuario eliminado exitosamente"})

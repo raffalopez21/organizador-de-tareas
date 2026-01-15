@@ -9,7 +9,7 @@ class DatabaseConnection:
             cls._connection = mysql.connector.connect( 
                 host=Config.DB_HOST, 
                 user=Config.DB_USER, 
-                #port = "3306", 
+                port =Config.DB_PORT, 
                 password=Config.DB_PASSWORD, 
                 database=Config.DB_NAME 
             ) 

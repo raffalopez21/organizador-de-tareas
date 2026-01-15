@@ -1,24 +1,19 @@
 from flask import Flask
-from flask_sqlalchemy import SQLAlchemy
+from dotenv import load_dotenv
 from config import Config
-  
-db = SQLAlchemy()
 
-def init_app():
-    """Crea y configura la aplicación Flask"""
-      
-    app = Flask(__name__, static_folder = Config.STATIC_FOLDER, template_folder = Config.TEMPLATE_FOLDER)
-      
+from app.routes.routes_usuario import usuario_bp
+from app.routes.routes_proyecto import proyecto_bp
+from app.routes.routes_tarea import tarea_bp
+
+def create_app():
+    load_dotenv()
+
+    app = Flask(__name__)
     app.config.from_object(Config)
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:Raffa_2110*@localhost/organizer_de_tareas'
-    db.init_app(app)
-  
-    # Register blueprints
-    from backend.app.controllers.controller_tarea import tarea_bp
-    from backend.app.controllers.controller_usuario import usuario_bp
-    from backend.app.controllers.controller_proyecto import proyecto_bp
-    app.register_blueprint(tarea_bp, url_prefix='/api')
-    app.register_blueprint(usuario_bp, url_prefix='/api')
-    app.register_blueprint(proyecto_bp, url_prefix='/api')
-    
+
+    app.register_blueprint(usuario_bp, url_prefix="/usuarios")
+    app.register_blueprint(proyecto_bp, url_prefix="/proyectos")
+    app.register_blueprint(tarea_bp, url_prefix="/tareas")
+
     return app

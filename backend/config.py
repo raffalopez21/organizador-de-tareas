@@ -1,5 +1,11 @@
-class Config: 
-    SERVER_NAME = "127.0.0.1:5000" 
-    DEBUG = True 
-    TEMPLATE_FOLDER = "templates/" 
-    STATIC_FOLDER = "static_folder/" 
+import os
+
+class Config:
+    SECRET_KEY = os.getenv("SECRET_KEY")
+    JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY")
+
+    DB_USER = os.getenv("DATABASE_USERNAME")
+    DB_PASSWORD = os.getenv("DATABASE_PASSWORD")
+    DB_HOST = os.getenv("DATABASE_HOST")
+    DB_PORT = os.getenv("DATABASE_PORT")
+    DB_NAME = os.getenv("DATABASE_NAME")

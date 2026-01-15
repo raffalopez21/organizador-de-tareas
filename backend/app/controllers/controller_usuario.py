@@ -1,39 +1,67 @@
-# controllers/usuario_controller.py
 from flask import request, jsonify
-from app.models.models_usuario import Usuario
-from app import db
+from database.database_connection import DatabaseConnection
 
 class UsuarioController:
+
     @staticmethod
     def get_usuarios():
-        usuarios = Usuario.query.all()
-        return jsonify([usuario.to_dict() for usuario in usuarios])
+        query = "SELECT id, nombre_usuario, email FROM usuarios"
+        rows = DatabaseConnection.fetch_all(query)
+
+        usuarios = []
+        for row in rows:
+            usuarios.append({
+                "id": row[0],
+                "nombre_usuario": row[1],
+                "email": row[2]
+            })
+
+        return jsonify(usuarios)
 
     @staticmethod
     def add_usuario():
         data = request.get_json()
-        nuevo_usuario = Usuario(
-            nombre_usuario=data['nombre_usuario'],
-            email=data['email'],
-            contrasena=data['contrasena']
+
+        query = """
+            INSERT INTO usuarios (nombre_usuario, email, contrasena)
+            VALUES (%s, %s, %s)
+        """
+
+        params = (
+            data["nombre_usuario"],
+            data["email"],
+            data["contrasena"]
         )
-        db.session.add(nuevo_usuario)
-        db.session.commit()
-        return jsonify(nuevo_usuario.to_dict()), 201
+
+        DatabaseConnection.execute_query(query, params)
+
+        return jsonify({"message": "Usuario creado"}), 201
 
     @staticmethod
     def update_usuario(usuario_id):
-        usuario = Usuario.query.get_or_404(usuario_id)
         data = request.get_json()
-        usuario.nombre_usuario = data.get('nombre_usuario', usuario.nombre_usuario)
-        usuario.email = data.get('email', usuario.email)
-        usuario.contrasena = data.get('contrasena', usuario.contrasena)
-        db.session.commit()
-        return jsonify(usuario.to_dict())
+
+        query = """
+            UPDATE usuarios SET
+            nombre_usuario = %s,
+            email = %s,
+            contrasena = %s
+            WHERE id = %s
+        """
+
+        params = (
+            data["nombre_usuario"],
+            data["email"],
+            data["contrasena"],
+            usuario_id
+        )
+
+        DatabaseConnection.execute_query(query, params)
+
+        return jsonify({"message": "Usuario actualizado"})
 
     @staticmethod
     def delete_usuario(usuario_id):
-        usuario = Usuario.query.get_or_404(usuario_id)
-        db.session.delete(usuario)
-        db.session.commit()
-        return '', 204
+        query = "DELETE FROM usuarios WHERE id = %s"
+        DatabaseConnection.execute_query(query, (usuario_id,))
+        return "", 204

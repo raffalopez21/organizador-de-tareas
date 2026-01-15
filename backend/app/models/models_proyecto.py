@@ -1,4 +1,4 @@
-from ...database import DatabaseConnection 
+from database.database_connection import DatabaseConnection
 
 class Proyecto:
     def __init__(self, id=None, titulo=None, descripcion=None, usuario_id=None):

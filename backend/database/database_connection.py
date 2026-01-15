@@ -1,4 +1,5 @@
-import mysql.connector 
+import mysql.connector
+from config import Config
  
 class DatabaseConnection: 
     _connection = None 
@@ -6,11 +7,11 @@ class DatabaseConnection:
     def get_connection(cls): 
         if cls._connection is None: 
             cls._connection = mysql.connector.connect( 
-                host='localhost', 
-                user='root', 
+                host=Config.DB_HOST, 
+                user=Config.DB_USER, 
                 #port = "3306", 
-                password='Raffa_2110*', 
-                database='organizer_de_tareas' 
+                password=Config.DB_PASSWORD, 
+                database=Config.DB_NAME 
             ) 
         return cls._connection 
     
@@ -38,26 +39,3 @@ class DatabaseConnection:
         if cls._connection is not None: 
             cls._connection.close() 
             cls._connection = None 
-
-
-'''conn = mysql.connector.connect(user='root', 
-                               password='Raffa_2110*', 
-                               host='localhost', 
-                               database='sakila') 
- 
-film_id = 100 
-consulta = """SELECT first_name, last_name 
-              FROM actor 
-              INNER JOIN film_actor 
-              ON actor.actor_id = film_actor.actor_id 
-              WHERE film_actor.film_id = %s""" 
- 
-cur = conn.cursor() 
-cur.execute(consulta, (film_id,)) 
-resultado = cur.fetchall() 
-print(resultado)  # muestra una lista de tuplas con los datos 
-conn.close() '''
-
-
-
-

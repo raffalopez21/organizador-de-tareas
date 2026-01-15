@@ -1,4 +1,4 @@
-from ...database import DatabaseConnection 
+from database.database_connection import DatabaseConnection
 
 class Usuario:
     def __init__(self, id=None, nombre_usuario=None, email=None, contrasena=None):

@@ -1,5 +1,5 @@
 from flask import Blueprint
-from ..controllers.controller_tarea import TareaController
+from app.controllers.controller_tarea import TareaController
 
 tarea_bp = Blueprint('tarea_bp', __name__)
 

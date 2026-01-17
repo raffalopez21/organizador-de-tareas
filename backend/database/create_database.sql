@@ -9,6 +9,9 @@ CREATE TABLE IF NOT EXISTS usuarios (
   PRIMARY KEY (id)
 );
 
+INSERT IGNORE INTO usuarios (id, nombre_usuario, email, contrasena) 
+VALUES (1, 'administrador', 'admin@example.com', 'admin123');
+
 CREATE TABLE IF NOT EXISTS proyectos (
   id INT AUTO_INCREMENT,
   titulo VARCHAR(255) NOT NULL,
@@ -23,7 +26,7 @@ CREATE TABLE IF NOT EXISTS tareas (
   titulo VARCHAR(255) NOT NULL,
   descripcion TEXT,
   status ENUM('pendiente', 'completada', 'pospuesta') DEFAULT 'pendiente',
-  fecha_recordatorio DATETIME,
+  fecha DATETIME,
   usuario_id INT,
   proyecto_id INT,
   PRIMARY KEY (id),

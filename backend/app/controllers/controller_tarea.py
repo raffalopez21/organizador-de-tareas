@@ -15,7 +15,7 @@ class TareaController:
                 "titulo": row[1],
                 "descripcion": row[2],
                 "status": row[3],
-                "fecha_recordatorio": row[4],
+                "fecha": row[4],
                 "usuario_id": row[5],
                 "proyecto_id": row[6]
             })
@@ -28,15 +28,23 @@ class TareaController:
 
         query = """
             INSERT INTO tareas 
-            (titulo, descripcion, status, fecha_recordatorio, usuario_id, proyecto_id)
+            (titulo, descripcion, status, fecha, usuario_id, proyecto_id)
             VALUES (%s, %s, %s, %s, %s, %s)
         """
+
+        # Mapear 'completada' del frontend a 'status' del backend
+        status = "completada" if data.get("completada") else "pendiente"
+        
+        # Formatear fecha para MySQL (YYYY-MM-DD HH:MM:SS)
+        fecha = data.get("fecha")
+        if fecha:
+            fecha = fecha.replace('T', ' ').replace('Z', '')
 
         params = (
             data["titulo"],
             data.get("descripcion", ""),
-            data.get("status", "pendiente"),
-            data.get("fecha_recordatorio"),
+            status,
+            fecha,
             data["usuario_id"],
             data.get("proyecto_id")
         )
@@ -54,17 +62,25 @@ class TareaController:
             titulo=%s,
             descripcion=%s,
             status=%s,
-            fecha_recordatorio=%s,
+            fecha=%s,
             usuario_id=%s,
             proyecto_id=%s
             WHERE id=%s
         """
 
+        # Mapear 'completada' del frontend a 'status' del backend
+        status = "completada" if data.get("completada") else "pendiente"
+
+        # Formatear fecha para MySQL (YYYY-MM-DD HH:MM:SS)
+        fecha = data.get("fecha")
+        if fecha:
+            fecha = fecha.replace('T', ' ').replace('Z', '')
+
         params = (
             data["titulo"],
             data["descripcion"],
-            data["status"],
-            data["fecha_recordatorio"],
+            status,
+            fecha,
             data["usuario_id"],
             data["proyecto_id"],
             tarea_id

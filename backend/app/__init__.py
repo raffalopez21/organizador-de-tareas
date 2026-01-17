@@ -3,6 +3,7 @@ from flask_cors import CORS
 from dotenv import load_dotenv
 from config import Config
 
+# Importar blueprints
 from app.routes.routes_usuario import usuario_bp
 from app.routes.routes_proyecto import proyecto_bp
 from app.routes.routes_tarea import tarea_bp
@@ -12,10 +13,16 @@ def create_app():
 
     app = Flask(__name__)
     app.config.from_object(Config)
+    
+    # Configurar CORS para permitir todas las origines en desarrollo
     CORS(app)
+    
+    # Para evitar redirecciones 308, configurar strict_slashes=False
+    app.url_map.strict_slashes = False
 
-    app.register_blueprint(usuario_bp, url_prefix="/usuarios")
-    app.register_blueprint(proyecto_bp, url_prefix="/proyectos")
-    app.register_blueprint(tarea_bp, url_prefix="/tareas")
+    # Registrar blueprints con prefijo /api
+    app.register_blueprint(usuario_bp, url_prefix="/api/usuarios")
+    app.register_blueprint(proyecto_bp, url_prefix="/api/proyectos")
+    app.register_blueprint(tarea_bp, url_prefix="/api/tareas")
 
     return app

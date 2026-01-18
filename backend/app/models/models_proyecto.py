@@ -7,40 +7,41 @@ class Proyecto:
         self.descripcion = descripcion
         self.usuario_id = usuario_id
 
+    def to_dict(self):
+        return vars(self)
+
     @classmethod
-    def create_proyecto(cls, proyecto):
+    def create(cls, proyecto):
         query = """
-        INSERT INTO proyectos (titulo, descripcion, usuario_id)
-        VALUES (%s, %s, %s)
+            INSERT INTO proyectos (titulo, descripcion, usuario_id)
+            VALUES (%s, %s, %s)
         """
         params = (
             proyecto.titulo,
             proyecto.descripcion,
             proyecto.usuario_id
         )
-        DatabaseConnection.execute_query(query, params)
+        return DatabaseConnection.execute_query(query, params)
 
     @classmethod
-    def get_proyecto_by_id(cls, proyecto_id):
+    def get_by_id(cls, proyecto_id):
         query = "SELECT * FROM proyectos WHERE id = %s"
         params = (proyecto_id,)
         result = DatabaseConnection.fetch_one(query, params)
-        if result:
-            return cls(*result)
-        return None
+        return cls(*result) if result else None
 
     @classmethod
-    def get_all_proyectos(cls):
+    def get_all(cls):
         query = "SELECT * FROM proyectos"
         results = DatabaseConnection.fetch_all(query)
-        return [cls(*result) for result in results]
+        return [cls(*row) for row in results]
 
     @classmethod
-    def update_proyecto(cls, proyecto):
+    def update(cls, proyecto):
         query = """
-        UPDATE proyectos
-        SET titulo = %s, descripcion = %s, usuario_id = %s
-        WHERE id = %s
+            UPDATE proyectos
+            SET titulo = %s, descripcion = %s, usuario_id = %s
+            WHERE id = %s
         """
         params = (
             proyecto.titulo,
@@ -51,7 +52,7 @@ class Proyecto:
         DatabaseConnection.execute_query(query, params)
 
     @classmethod
-    def delete_proyecto(cls, proyecto_id):
+    def delete(cls, proyecto_id):
         query = "DELETE FROM proyectos WHERE id = %s"
         params = (proyecto_id,)
         DatabaseConnection.execute_query(query, params)

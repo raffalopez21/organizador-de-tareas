@@ -22,20 +22,7 @@ export const getTareas = async () => {
     return data;
   } catch (error) {
     console.error('Error al obtener tareas:', error);
-    // Datos de ejemplo para desarrollo
-    return [
-      {
-        id: 1,
-        titulo: "Tarea de ejemplo",
-        descripcion: "Descripción de ejemplo",
-        fecha: new Date().toISOString(),
-        duracion: 60,
-        color: "#3B82F6",
-        completada: false,
-        usuario_id: 1,
-        proyecto_id: null
-      }
-    ];
+    return [];
   }
 };
 
@@ -47,8 +34,7 @@ export const createTarea = async (tarea) => {
       descripcion: tarea.description || '',
       fecha: tarea.date,
       completada: tarea.completed || false,
-      usuario_id: tarea.usuario_id || 1,
-      proyecto_id: tarea.proyecto_id || null
+      usuario_id: tarea.usuario_id || 1
     };
 
     const response = await fetch(`${API_URL}/tareas`, {
@@ -83,8 +69,7 @@ export const updateTarea = async (tareaId, tarea) => {
       descripcion: tarea.description || '',
       fecha: tarea.date,
       completada: tarea.completed || false,
-      usuario_id: tarea.usuario_id || 1,
-      proyecto_id: tarea.proyecto_id || null
+      usuario_id: tarea.usuario_id || 1
     };
 
     const response = await fetch(`${API_URL}/tareas/${tareaId}`, {
@@ -134,38 +119,6 @@ export const deleteTarea = async (tareaId) => {
   }
 };
 
-// Obtener proyectos
-export const getProyectos = async () => {
-  try {
-    const response = await fetch(`${API_URL}/proyectos`);
-    if (!response.ok) {
-      throw new Error(`Error ${response.status}: ${response.statusText}`);
-    }
-    const data = await response.json();
-    console.log('Proyectos recibidos:', data);
-    return data;
-  } catch (error) {
-    console.error('Error al obtener proyectos:', error);
-    return [];
-  }
-};
-
-// Obtener usuarios
-export const getUsuarios = async () => {
-  try {
-    const response = await fetch(`${API_URL}/usuarios`);
-    if (!response.ok) {
-      throw new Error(`Error ${response.status}: ${response.statusText}`);
-    }
-    const data = await response.json();
-    console.log('Usuarios recibidos:', data);
-    return data;
-  } catch (error) {
-    console.error('Error al obtener usuarios:', error);
-    return [];
-  }
-};
-
 // Transformar tareas del backend al frontend
 export const transformarTareaDelBackend = (tareaBackend) => {
   return {
@@ -176,7 +129,6 @@ export const transformarTareaDelBackend = (tareaBackend) => {
     duration: tareaBackend.duracion || tareaBackend.duration || 60,
     color: tareaBackend.color || '#3B82F6',
     completed: tareaBackend.completada || tareaBackend.completed || false,
-    proyecto_id: tareaBackend.proyecto_id || tareaBackend.proyecto_id,
-    usuario_id: tareaBackend.usuario_id || tareaBackend.usuario_id || 1
+    usuario_id: tareaBackend.usuario_id || 1
   };
 };

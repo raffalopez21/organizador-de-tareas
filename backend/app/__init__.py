@@ -4,8 +4,6 @@ from dotenv import load_dotenv
 from config import Config
 
 # Importar blueprints
-from app.routes.routes_usuario import usuario_bp
-from app.routes.routes_proyecto import proyecto_bp
 from app.routes.routes_tarea import tarea_bp
 
 def create_app():
@@ -21,8 +19,6 @@ def create_app():
     app.url_map.strict_slashes = False
 
     # Registrar blueprints con prefijo /api
-    app.register_blueprint(usuario_bp, url_prefix="/api/usuarios")
-    app.register_blueprint(proyecto_bp, url_prefix="/api/proyectos")
     app.register_blueprint(tarea_bp, url_prefix="/api/tareas")
 
     return app

@@ -1,96 +1,68 @@
 from flask import request, jsonify
-from database.database_connection import DatabaseConnection
+from datetime import datetime
+from app.models.models_tarea import Tarea
 
 class TareaController:
 
     @staticmethod
     def get_tareas():
-        query = "SELECT * FROM tareas"
-        rows = DatabaseConnection.fetch_all(query)
-
-        tareas = []
-        for row in rows:
-            tareas.append({
-                "id": row[0],
-                "titulo": row[1],
-                "descripcion": row[2],
-                "status": row[3],
-                "fecha": row[4],
-                "usuario_id": row[5],
-                "proyecto_id": row[6]
-            })
-
-        return jsonify(tareas)
+        tareas = Tarea.get_all()
+        return jsonify([t.to_dict() for t in tareas])
 
     @staticmethod
     def add_tarea():
         data = request.get_json()
+        if not data or 'titulo' not in data:
+            return jsonify({"error": "Faltan campos obligatorios (titulo)"}), 400
 
-        query = """
-            INSERT INTO tareas 
-            (titulo, descripcion, status, fecha, usuario_id, proyecto_id)
-            VALUES (%s, %s, %s, %s, %s, %s)
-        """
+        status = "completada" if data.get("completada") else data.get("status", "pendiente")
 
-        # Mapear 'completada' del frontend a 'status' del backend
-        status = "completada" if data.get("completada") else "pendiente"
-        
-        # Formatear fecha para MySQL (YYYY-MM-DD HH:MM:SS)
-        fecha = data.get("fecha")
-        if fecha:
-            fecha = fecha.replace('T', ' ').replace('Z', '')
+        fecha_raw = data.get("fecha")
+        fecha_db = None
+        if fecha_raw:
+            try:
+                fecha_db = datetime.fromisoformat(fecha_raw.replace('Z', '+00:00')).strftime('%Y-%m-%d %H:%M:%S')
+            except Exception as e:
+                print(f"Error parsing date: {e}")
+                fecha_db = None
 
-        params = (
-            data["titulo"],
-            data.get("descripcion", ""),
-            status,
-            fecha,
-            data["usuario_id"],
-            data.get("proyecto_id")
+        tarea = Tarea(
+            titulo=data["titulo"],
+            descripcion=data.get("descripcion", ""),
+            status=status,
+            fecha=fecha_db,
+            usuario_id=1 # Default user ID
         )
-
-        DatabaseConnection.execute_query(query, params)
-
-        return jsonify({"message": "Tarea creada"}), 201
+        tarea_id = Tarea.create(tarea)
+        tarea.id = tarea_id
+        return jsonify(tarea.to_dict()), 201
 
     @staticmethod
     def update_tarea(tarea_id):
         data = request.get_json()
+        status = "completada" if data.get("completada") else data.get("status", "pendiente")
 
-        query = """
-            UPDATE tareas SET
-            titulo=%s,
-            descripcion=%s,
-            status=%s,
-            fecha=%s,
-            usuario_id=%s,
-            proyecto_id=%s
-            WHERE id=%s
-        """
+        fecha_raw = data.get("fecha")
+        fecha_db = None
+        if fecha_raw:
+            try:
+                fecha_db = datetime.fromisoformat(fecha_raw.replace('Z', '+00:00')).strftime('%Y-%m-%d %H:%M:%S')
+            except Exception as e:
+                print(f"Error parsing date: {e}")
+                fecha_db = None
 
-        # Mapear 'completada' del frontend a 'status' del backend
-        status = "completada" if data.get("completada") else "pendiente"
-
-        # Formatear fecha para MySQL (YYYY-MM-DD HH:MM:SS)
-        fecha = data.get("fecha")
-        if fecha:
-            fecha = fecha.replace('T', ' ').replace('Z', '')
-
-        params = (
-            data["titulo"],
-            data["descripcion"],
-            status,
-            fecha,
-            data["usuario_id"],
-            data["proyecto_id"],
-            tarea_id
+        tarea = Tarea(
+            id=tarea_id,
+            titulo=data.get("titulo"),
+            descripcion=data.get("descripcion", ""),
+            status=status,
+            fecha=fecha_db,
+            usuario_id=1 # Default user ID
         )
-
-        DatabaseConnection.execute_query(query, params)
-        return jsonify({"message": "Tarea actualizada"})
+        Tarea.update(tarea)
+        return jsonify(tarea.to_dict())
 
     @staticmethod
     def delete_tarea(tarea_id):
-        query = "DELETE FROM tareas WHERE id = %s"
-        DatabaseConnection.execute_query(query, (tarea_id,))
-        return "", 204
+        Tarea.delete(tarea_id)
+        return jsonify({"message": "Tarea eliminada"})

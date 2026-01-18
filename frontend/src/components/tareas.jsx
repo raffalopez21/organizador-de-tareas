@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 
-const API_URL = 'http://localhost:5000/tareas'; // Ajusta a tu puerto de Flask
+const API_URL = 'http://localhost:5000/api/tareas'; // Ajustado con el prefijo /api
 
 export default function ListaTareas() {
     const [tareas, setTareas] = useState([]);
@@ -21,7 +21,7 @@ export default function ListaTareas() {
             const nueva = {
                 titulo: nuevoTitulo,
                 usuario_id: 1, // Ejemplo
-                fecha_recordatorio: new Date().toISOString().split('T')[0] // Hoy
+                fecha: new Date().toISOString().split('T')[0] // Hoy (renombrado de fecha_recordatorio)
             };
             const res = await fetch(API_URL + '/', {
                 method: 'POST',

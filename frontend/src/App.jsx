@@ -13,6 +13,7 @@ function App() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState(null);
+  const [viewingTask, setViewingTask] = useState(null);
 
   useEffect(() => {
     loadData();
@@ -123,13 +124,23 @@ function App() {
   const toggleTaskCompletion = async (taskId) => {
     const task = tasks.find(t => t.id === taskId);
     if (!task) return;
-    const updatedTask = { ...task, completed: !task.completed };
+
+    // Actualización optimista
+    const originalTasks = [...tasks];
+    const newStatus = !task.completed;
+    setTasks(tasks.map(t => t.id === taskId ? { ...t, completed: newStatus } : t));
+
     try {
+      const updatedTask = { ...task, completed: newStatus };
       const response = await api.updateTarea(taskId, updatedTask);
       const tareaTransformada = api.transformarTareaDelBackend(response);
-      setTasks(tasks.map(t => t.id === taskId ? tareaTransformada : t));
+
+      // Sincronizar con la respuesta real del servidor
+      setTasks(prev => prev.map(t => t.id === taskId ? tareaTransformada : t));
     } catch (error) {
       console.error('Error actualizando tarea:', error);
+      setError('No se pudo actualizar el estado de la tarea.');
+      setTasks(originalTasks); // Revertir en caso de error
     }
   };
 
@@ -249,10 +260,41 @@ function App() {
                   <div className="day-cell-content">
                     {dayTasks.map(task => (
                       <div key={task.id} className={`mini-task ${task.completed ? 'completed' : ''}`} onClick={() => toggleTaskCompletion(task.id)}>
-                        <span className="mini-task-title">{task.title}</span>
+                        <div className="mini-task-left">
+                          <input
+                            type="checkbox"
+                            checked={task.completed}
+                            onChange={(e) => {
+                              e.stopPropagation();
+                              toggleTaskCompletion(task.id);
+                            }}
+                            onClick={(e) => e.stopPropagation()}
+                            className="task-checkbox"
+                          />
+                          <span className="mini-task-title">{task.title}</span>
+                        </div>
                         <div className="mini-task-actions">
-                          <button onClick={(e) => { e.stopPropagation(); handleEditTask(task); }}>✏️</button>
-                          <button onClick={(e) => { e.stopPropagation(); handleDeleteTask(task.id); }}>×</button>
+                          <button
+                            className="btn-view"
+                            title="Ver detalles"
+                            onClick={(e) => { e.stopPropagation(); setViewingTask(task); }}
+                          >
+                            👁️
+                          </button>
+                          <button
+                            className="btn-edit"
+                            title="Editar"
+                            onClick={(e) => { e.stopPropagation(); handleEditTask(task); }}
+                          >
+                            ✏️
+                          </button>
+                          <button
+                            className="btn-delete"
+                            title="Eliminar"
+                            onClick={(e) => { e.stopPropagation(); handleDeleteTask(task.id); }}
+                          >
+                            ×
+                          </button>
                         </div>
                       </div>
                     ))}
@@ -273,6 +315,64 @@ function App() {
           onCancel={() => { setShowTaskForm(false); setEditingTask(null); }}
         />
       )}
+
+      {viewingTask && (
+        <TaskDetails
+          task={viewingTask}
+          onClose={() => setViewingTask(null)}
+          onEdit={() => {
+            handleEditTask(viewingTask);
+            setViewingTask(null);
+          }}
+          onDelete={() => {
+            handleDeleteTask(viewingTask.id);
+            setViewingTask(null);
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+function TaskDetails({ task, onClose, onEdit, onDelete }) {
+  const taskDate = new Date(task.date);
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-content task-details-modal" onClick={e => e.stopPropagation()}>
+        <div className="modal-header">
+          <h2>Detalles de la Tarea</h2>
+        </div>
+        <div className="task-details-body">
+          <div className="detail-item">
+            <span className="detail-label">Título:</span>
+            <div className="detail-value title">{task.title}</div>
+          </div>
+          <div className="detail-item">
+            <span className="detail-label">Fecha y Hora:</span>
+            <div className="detail-value">
+              {taskDate.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })} a las {taskDate.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
+            </div>
+          </div>
+          <div className="detail-item">
+            <span className="detail-label">Estado:</span>
+            <div className={`detail-value status ${task.completed ? 'completed' : 'pending'}`}>
+              {task.completed ? '✅ Completada' : '⏳ Pendiente'}
+            </div>
+          </div>
+          <div className="detail-item">
+            <span className="detail-label">Descripción:</span>
+            <div className="detail-value description">
+              {task.description || 'Sin descripción'}
+            </div>
+          </div>
+        </div>
+        <div className="form-actions">
+          <button className="btn btn-secondary" onClick={onClose}>Cerrar</button>
+          <button className="btn btn-edit-detail" onClick={onEdit}>Editar</button>
+          <button className="btn btn-delete-detail" onClick={onDelete}>Eliminar</button>
+        </div>
+      </div>
     </div>
   );
 }

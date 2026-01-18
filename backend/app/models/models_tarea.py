@@ -11,9 +11,15 @@ class Tarea:
         self.usuario_id = usuario_id
 
     def to_dict(self):
-        data = vars(self).copy()
-        if self.fecha and hasattr(self.fecha, 'isoformat'):
-            data['fecha'] = self.fecha.isoformat()
+        data = {
+            "id": self.id,
+            "titulo": self.titulo,
+            "descripcion": self.descripcion,
+            "status": self.status,
+            "fecha": self.fecha.isoformat() if self.fecha and hasattr(self.fecha, 'isoformat') else self.fecha,
+            "usuario_id": self.usuario_id,
+            "completada": self.status == "completada"
+        }
         return data
 
     @classmethod

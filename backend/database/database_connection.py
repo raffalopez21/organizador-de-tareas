@@ -1,4 +1,5 @@
 import mysql.connector
+import os
 from config import Config
 
 
@@ -12,13 +13,26 @@ class DatabaseConnection:
         Si no existe o está caída, se crea nuevamente.
         """
         if cls._connection is None or not cls._connection.is_connected():
-            cls._connection = mysql.connector.connect(
-                host=Config.DB_HOST,
-                user=Config.DB_USER,
-                port=Config.DB_PORT,
-                password=Config.DB_PASSWORD,
-                database=Config.DB_NAME,
-            )
+
+            connection_config = {
+                "host": Config.DB_HOST,
+                "user": Config.DB_USER,
+                "port": int(Config.DB_PORT),
+                "password": Config.DB_PASSWORD,
+                "database": Config.DB_NAME,
+            }
+
+            # 👉 SSL solo si está configurado (Aiven / producción)
+            ssl_ca_path = os.getenv("DB_SSL_CA")
+
+            if ssl_ca_path:
+                connection_config.update({
+                    "ssl_ca": ssl_ca_path,
+                    "ssl_verify_cert": True
+                })
+
+            cls._connection = mysql.connector.connect(**connection_config)
+
         return cls._connection
 
     @classmethod

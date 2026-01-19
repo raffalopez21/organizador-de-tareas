@@ -108,16 +108,39 @@ function App() {
   const getTasksForDay = (day) => {
     let filteredTasks = tasks.filter(task => {
       if (!task.date) return false;
-      const taskDate = new Date(task.date);
-      return taskDate.getDate() === day.getDate() &&
-        taskDate.getMonth() === day.getMonth() &&
-        taskDate.getFullYear() === day.getFullYear();
+
+      // Extraer la fecha sin conversión de timezone
+      let taskYear, taskMonth, taskDay;
+
+      if (typeof task.date === 'string') {
+        // Si es string, parsear directamente sin new Date()
+        const datePart = task.date.split('T')[0];
+        const [year, month, dayNum] = datePart.split('-').map(Number);
+        taskYear = year;
+        taskMonth = month - 1; // Meses en JavaScript empiezan en 0
+        taskDay = dayNum;
+      } else {
+        // Si es objeto Date
+        const taskDate = new Date(task.date);
+        taskYear = taskDate.getFullYear();
+        taskMonth = taskDate.getMonth();
+        taskDay = taskDate.getDate();
+      }
+
+      return taskDay === day.getDate() &&
+        taskMonth === day.getMonth() &&
+        taskYear === day.getFullYear();
     });
 
     if (filterStatus === 'pendientes') filteredTasks = filteredTasks.filter(task => !task.completed);
     else if (filterStatus === 'completadas') filteredTasks = filteredTasks.filter(task => task.completed);
 
-    filteredTasks.sort((a, b) => new Date(a.date) - new Date(b.date));
+    filteredTasks.sort((a, b) => {
+      // Comparar fechas como strings para evitar conversión de timezone
+      const dateA = typeof a.date === 'string' ? a.date : a.date.toISOString();
+      const dateB = typeof b.date === 'string' ? b.date : b.date.toISOString();
+      return dateA.localeCompare(dateB);
+    });
     return filteredTasks;
   };
 
@@ -335,7 +358,31 @@ function App() {
 }
 
 function TaskDetails({ task, onClose, onEdit, onDelete }) {
-  const taskDate = new Date(task.date);
+  // Parsear la fecha manualmente para evitar conversión de timezone
+  const formatTaskDateTime = (dateStr) => {
+    if (!dateStr) return 'Sin fecha';
+
+    // Extraer componentes de la fecha del string
+    const datePart = dateStr.split('T')[0];
+    const timePart = dateStr.includes('T') ? dateStr.split('T')[1] : '';
+
+    const [year, month, day] = datePart.split('-').map(Number);
+    const [hour, minute] = timePart ? timePart.split(':').map(Number) : [0, 0];
+
+    // Crear fecha local para formatear sin conversión UTC
+    const localDate = new Date(year, month - 1, day, hour, minute);
+
+    const dateFormatted = localDate.toLocaleDateString('es-ES', {
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric'
+    });
+
+    const timeFormatted = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+
+    return `${dateFormatted} a las ${timeFormatted}`;
+  };
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -351,7 +398,7 @@ function TaskDetails({ task, onClose, onEdit, onDelete }) {
           <div className="detail-item">
             <span className="detail-label">Fecha y Hora:</span>
             <div className="detail-value">
-              {taskDate.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })} a las {taskDate.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', hour12: false })}
+              {formatTaskDateTime(task.date)}
             </div>
           </div>
           <div className="detail-item">
@@ -381,6 +428,11 @@ function TaskForm({ task, selectedDay, onSave, onCancel }) {
   // Función helper para obtener la fecha/hora local sin conversión UTC
   const getLocalDateString = (dateInput) => {
     if (!dateInput) return new Date().toISOString().split('T')[0];
+    // Si dateInput es un string con formato ISO, extraer la fecha directamente
+    if (typeof dateInput === 'string' && dateInput.includes('-')) {
+      return dateInput.split('T')[0];
+    }
+    // Si es un objeto Date
     const date = new Date(dateInput);
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -390,6 +442,12 @@ function TaskForm({ task, selectedDay, onSave, onCancel }) {
 
   const getLocalTimeString = (dateInput) => {
     if (!dateInput) return '09:00';
+    // Si dateInput es un string con formato ISO, extraer la hora directamente
+    if (typeof dateInput === 'string' && dateInput.includes('T')) {
+      const timePart = dateInput.split('T')[1];
+      return timePart.substring(0, 5); // HH:mm
+    }
+    // Si es un objeto Date
     const date = new Date(dateInput);
     const hours = String(date.getHours()).padStart(2, '0');
     const minutes = String(date.getMinutes()).padStart(2, '0');

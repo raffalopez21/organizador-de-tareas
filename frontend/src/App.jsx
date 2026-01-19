@@ -382,8 +382,9 @@ function TaskDetails({ task, onClose, onEdit, onDelete }) {
     if (!dateStr) return 'Sin fecha';
 
     // Extraer componentes de la fecha del string
-    const datePart = dateStr.split('T')[0];
-    const timePart = dateStr.includes('T') ? dateStr.split('T')[1] : '';
+    // Manejar formato: "2026-01-19T09:00:00" o "2026-01-19 09:00:00"
+    const separator = dateStr.includes('T') ? 'T' : ' ';
+    const [datePart, timePart] = dateStr.split(separator);
 
     const [year, month, day] = datePart.split('-').map(Number);
     const [hour, minute] = timePart ? timePart.split(':').map(Number) : [0, 0];
@@ -447,9 +448,11 @@ function TaskForm({ task, selectedDay, onSave, onCancel }) {
   // Función helper para obtener la fecha/hora local sin conversión UTC
   const getLocalDateString = (dateInput) => {
     if (!dateInput) return new Date().toISOString().split('T')[0];
-    // Si dateInput es un string con formato ISO, extraer la fecha directamente
+    // Si dateInput es un string con formato ISO o SQL
     if (typeof dateInput === 'string' && dateInput.includes('-')) {
-      return dateInput.split('T')[0];
+      // Manejar formato: "2026-01-19T09:00:00" o "2026-01-19 09:00:00"
+      const datePart = dateInput.split('T')[0].split(' ')[0];
+      return datePart;
     }
     // Si es un objeto Date
     const date = new Date(dateInput);
@@ -461,10 +464,13 @@ function TaskForm({ task, selectedDay, onSave, onCancel }) {
 
   const getLocalTimeString = (dateInput) => {
     if (!dateInput) return '09:00';
-    // Si dateInput es un string con formato ISO, extraer la hora directamente
-    if (typeof dateInput === 'string' && dateInput.includes('T')) {
-      const timePart = dateInput.split('T')[1];
-      return timePart.substring(0, 5); // HH:mm
+    // Si dateInput es un string con formato ISO o SQL
+    if (typeof dateInput === 'string' && (dateInput.includes('T') || dateInput.includes(' '))) {
+      // Manejar formato: "2026-01-19T09:00:00" o "2026-01-19 09:00:00"
+      const timePart = dateInput.includes('T')
+        ? dateInput.split('T')[1]
+        : dateInput.split(' ')[1];
+      return timePart ? timePart.substring(0, 5) : '09:00'; // HH:mm
     }
     // Si es un objeto Date
     const date = new Date(dateInput);

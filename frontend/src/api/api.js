@@ -124,7 +124,7 @@ export const transformarTareaDelBackend = (tareaBackend) => {
   return {
     id: tareaBackend.id,
     title: tareaBackend.titulo || tareaBackend.title,
-    description: tareaBackend.descripcion || tareaBackend.description,
+    description: tareaBackend.descripcion || tareaBackend.description || '',
     date: tareaBackend.fecha || tareaBackend.date,
     duration: tareaBackend.duracion || tareaBackend.duration || 60,
     color: tareaBackend.color || '#3B82F6',

@@ -482,8 +482,15 @@ input[type="time"]::-webkit-datetime-edit {
 }
 
 .time-option {
-  background-color: #1e293b;
-  color: white;
+  background-color: #0f172a;
+  color: #ffffff;
+}
+
+/* Nota: option:hover tiene soporte limitado en navegadores modernos,
+   pero establecemos colores base que contrasten mejor con el sistema */
+.time-selector-24h select option:checked {
+  background-color: #3B82F6 !important;
+  color: white !important;
 }
 
 .time-separator {

@@ -21,4 +21,8 @@ def create_app():
     # Registrar blueprints con prefijo /api
     app.register_blueprint(tarea_bp, url_prefix="/api/tareas")
 
+    @app.route('/api/health')
+    def health():
+        return {"status": "ok"}, 200
+
     return app

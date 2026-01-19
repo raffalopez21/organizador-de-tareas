@@ -109,27 +109,34 @@ function App() {
     let filteredTasks = tasks.filter(task => {
       if (!task.date) return false;
 
-      // Extraer la fecha sin conversión de timezone
-      let taskYear, taskMonth, taskDay;
+      try {
+        // Extraer la fecha sin conversión de timezone
+        let taskYear, taskMonth, taskDay;
 
-      if (typeof task.date === 'string') {
-        // Si es string, parsear directamente sin new Date()
-        const datePart = task.date.split('T')[0];
-        const [year, month, dayNum] = datePart.split('-').map(Number);
-        taskYear = year;
-        taskMonth = month - 1; // Meses en JavaScript empiezan en 0
-        taskDay = dayNum;
-      } else {
-        // Si es objeto Date
-        const taskDate = new Date(task.date);
-        taskYear = taskDate.getFullYear();
-        taskMonth = taskDate.getMonth();
-        taskDay = taskDate.getDate();
+        if (typeof task.date === 'string') {
+          // Si es string, parsear directamente sin new Date()
+          const datePart = task.date.includes('T') ? task.date.split('T')[0] : task.date.split(' ')[0];
+          const [year, month, dayNum] = datePart.split('-').map(Number);
+          taskYear = year;
+          taskMonth = month - 1; // Meses en JavaScript empiezan en 0
+          taskDay = dayNum;
+        } else {
+          // Si es objeto Date
+          const taskDate = new Date(task.date);
+          taskYear = taskDate.getFullYear();
+          taskMonth = taskDate.getMonth();
+          taskDay = taskDate.getDate();
+        }
+
+        const match = taskDay === day.getDate() &&
+          taskMonth === day.getMonth() &&
+          taskYear === day.getFullYear();
+
+        return match;
+      } catch (error) {
+        console.error('Error parsing task date:', task.date, error);
+        return false;
       }
-
-      return taskDay === day.getDate() &&
-        taskMonth === day.getMonth() &&
-        taskYear === day.getFullYear();
     });
 
     if (filterStatus === 'pendientes') filteredTasks = filteredTasks.filter(task => !task.completed);
@@ -187,25 +194,37 @@ function App() {
   };
 
   const handleSaveTask = async (taskData) => {
+    console.log('🔵 handleSaveTask - datos recibidos:', taskData);
     try {
       let response;
       if (editingTask) {
         const taskToUpdate = { ...editingTask, ...taskData };
+        console.log('🔵 Actualizando tarea:', taskToUpdate);
         response = await api.updateTarea(editingTask.id, taskToUpdate);
+        console.log('🔵 Respuesta del backend (update):', response);
         const tareaTransformada = api.transformarTareaDelBackend(response);
+        console.log('🔵 Tarea transformada (update):', tareaTransformada);
         setTasks(tasks.map(task => task.id === editingTask.id ? tareaTransformada : task));
         setEditingTask(null);
         setSuccessMessage('Tarea actualizada correctamente');
       } else {
+        console.log('🔵 Creando nueva tarea:', taskData);
         response = await api.createTarea(taskData);
+        console.log('🔵 Respuesta del backend (create):', response);
         const tareaTransformada = api.transformarTareaDelBackend(response);
-        setTasks(prevTasks => [...prevTasks, tareaTransformada]);
+        console.log('🔵 Tarea transformada (create):', tareaTransformada);
+        setTasks(prevTasks => {
+          console.log('🔵 Tasks anteriores:', prevTasks.length);
+          const newTasks = [...prevTasks, tareaTransformada];
+          console.log('🔵 Tasks después de agregar:', newTasks.length);
+          return newTasks;
+        });
         setSuccessMessage('Tarea creada correctamente');
       }
       setShowTaskForm(false);
       setTimeout(() => setSuccessMessage(null), 3000);
     } catch (error) {
-      console.error('Error al guardar tarea:', error);
+      console.error('❌ Error al guardar tarea:', error);
       setError('Error al guardar tarea.');
     }
   };

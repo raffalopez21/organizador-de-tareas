@@ -9,6 +9,15 @@ CREATE TABLE IF NOT EXISTS usuarios (
   PRIMARY KEY (id)
 );
 
+CREATE TABLE IF NOT EXISTS proyectos (
+  id INT AUTO_INCREMENT,
+  titulo VARCHAR(255) NOT NULL,
+  descripcion TEXT,
+  usuario_id INT,
+  PRIMARY KEY (id),
+  FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE
+);
+
 CREATE TABLE IF NOT EXISTS tareas (
   id INT AUTO_INCREMENT,
   titulo VARCHAR(255) NOT NULL,

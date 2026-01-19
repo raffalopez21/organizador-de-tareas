@@ -37,46 +37,46 @@ class DatabaseConnection:
 
     @classmethod
     def execute_query(cls, query, params=None):
-        connection = cls.get_connection()
         cursor = None
         try:
+            connection = cls.get_connection()
             cursor = connection.cursor()
             cursor.execute(query, params)
             connection.commit()
             return cursor.lastrowid if query.strip().upper().startswith("INSERT") else cursor.rowcount
         except mysql.connector.Error as e:
             print(f"Error executing query: {e}")
-            return 0
+            raise e
         finally:
             if cursor is not None:
                 cursor.close()
 
     @classmethod
     def fetch_one(cls, query, params=None):
-        connection = cls.get_connection()
         cursor = None
         try:
+            connection = cls.get_connection()
             cursor = connection.cursor(buffered=True)
             cursor.execute(query, params)
             return cursor.fetchone()
         except mysql.connector.Error as e:
             print(f"Error executing query: {e}")
-            return None
+            raise e
         finally:
             if cursor is not None:
                 cursor.close()
 
     @classmethod
     def fetch_all(cls, query, params=None):
-        connection = cls.get_connection()
         cursor = None
         try:
+            connection = cls.get_connection()
             cursor = connection.cursor()
             cursor.execute(query, params)
             return cursor.fetchall()
         except mysql.connector.Error as e:
             print(f"Error executing query: {e}")
-            return None
+            raise e
         finally:
             if cursor is not None:
                 cursor.close()

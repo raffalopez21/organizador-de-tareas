@@ -523,13 +523,13 @@ function TaskForm({ task, selectedDay, onSave, onCancel }) {
               <div className="time-selector-24h">
                 <select value={hour} onChange={(e) => setHour(e.target.value)}>
                   {Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0')).map(h => (
-                    <option key={h} value={h}>{h} hs</option>
+                    <option key={h} value={h} className="time-option">{h} hs</option>
                   ))}
                 </select>
                 <span className="time-separator">:</span>
                 <select value={minute} onChange={(e) => setMinute(e.target.value)}>
-                  {['00', '15', '30', '45'].map(m => (
-                    <option key={m} value={m}>{m}</option>
+                  {Array.from({ length: 60 }, (_, i) => String(i).padStart(2, '0')).map(m => (
+                    <option key={m} value={m} className="time-option">{m}</option>
                   ))}
                 </select>
               </div>

@@ -102,7 +102,7 @@ function App() {
   };
 
   const formatTime = (date) => {
-    return date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+    return date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', hour12: false });
   };
 
   const getTasksForDay = (day) => {
@@ -351,7 +351,7 @@ function TaskDetails({ task, onClose, onEdit, onDelete }) {
           <div className="detail-item">
             <span className="detail-label">Fecha y Hora:</span>
             <div className="detail-value">
-              {taskDate.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })} a las {taskDate.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
+              {taskDate.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })} a las {taskDate.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', hour12: false })}
             </div>
           </div>
           <div className="detail-item">
@@ -378,20 +378,39 @@ function TaskDetails({ task, onClose, onEdit, onDelete }) {
 }
 
 function TaskForm({ task, selectedDay, onSave, onCancel }) {
+  // Función helper para obtener la fecha/hora local sin conversión UTC
+  const getLocalDateString = (dateInput) => {
+    if (!dateInput) return new Date().toISOString().split('T')[0];
+    const date = new Date(dateInput);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  const getLocalTimeString = (dateInput) => {
+    if (!dateInput) return '09:00';
+    const date = new Date(dateInput);
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    return `${hours}:${minutes}`;
+  };
+
   const [title, setTitle] = useState(task ? task.title : '');
   const [description, setDescription] = useState(task ? task.description : '');
   const [date, setDate] = useState(
-    task && task.date ? new Date(task.date).toISOString().split('T')[0] :
-      selectedDay ? selectedDay.toISOString().split('T')[0] : new Date().toISOString().split('T')[0]
+    task && task.date ? getLocalDateString(task.date) :
+      selectedDay ? getLocalDateString(selectedDay) : getLocalDateString(null)
   );
   const [time, setTime] = useState(
-    task && task.date ? new Date(task.date).toTimeString().substring(0, 5) : '09:00'
+    task && task.date ? getLocalTimeString(task.date) : '09:00'
   );
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    const taskDateTime = new Date(`${date}T${time}`);
-    onSave({ title, description, date: taskDateTime.toISOString(), usuario_id: 1 });
+    // Crear fecha en formato local sin conversión a UTC
+    const localDateTime = `${date}T${time}:00`;
+    onSave({ title, description, date: localDateTime, usuario_id: 1 });
   };
 
   return (
@@ -405,7 +424,7 @@ function TaskForm({ task, selectedDay, onSave, onCancel }) {
           <div className="form-group"><label>Descripción</label><textarea value={description} onChange={(e) => setDescription(e.target.value)} rows="3" /></div>
           <div className="form-row">
             <div className="form-group"><label>Fecha *</label><input type="date" value={date} onChange={(e) => setDate(e.target.value)} required /></div>
-            <div className="form-group"><label>Hora *</label><input type="time" value={time} onChange={(e) => setTime(e.target.value)} required /></div>
+            <div className="form-group"><label>Hora (24h) *</label><input type="time" value={time} onChange={(e) => setTime(e.target.value)} step="60" required /></div>
           </div>
           <div className="form-actions">
             <button type="button" className="btn btn-secondary" onClick={onCancel}>Cancelar</button>

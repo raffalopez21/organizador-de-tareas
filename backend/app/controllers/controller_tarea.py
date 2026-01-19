@@ -21,7 +21,15 @@ class TareaController:
         fecha_db = None
         if fecha_raw:
             try:
-                fecha_db = datetime.fromisoformat(fecha_raw.replace('Z', '+00:00')).strftime('%Y-%m-%d %H:%M:%S')
+                # Manejar fecha en formato local sin conversión de timezone
+                # Formato esperado: YYYY-MM-DDTHH:mm:ss o YYYY-MM-DDTHH:mm
+                fecha_str = fecha_raw.replace('Z', '').replace('+00:00', '')
+                if 'T' in fecha_str:
+                    # Es formato datetime
+                    fecha_db = datetime.fromisoformat(fecha_str).strftime('%Y-%m-%d %H:%M:%S')
+                else:
+                    # Es solo fecha
+                    fecha_db = fecha_str
             except Exception as e:
                 print(f"Error parsing date: {e}")
                 fecha_db = None
@@ -46,7 +54,15 @@ class TareaController:
         fecha_db = None
         if fecha_raw:
             try:
-                fecha_db = datetime.fromisoformat(fecha_raw.replace('Z', '+00:00')).strftime('%Y-%m-%d %H:%M:%S')
+                # Manejar fecha en formato local sin conversión de timezone
+                # Formato esperado: YYYY-MM-DDTHH:mm:ss o YYYY-MM-DDTHH:mm
+                fecha_str = fecha_raw.replace('Z', '').replace('+00:00', '')
+                if 'T' in fecha_str:
+                    # Es formato datetime
+                    fecha_db = datetime.fromisoformat(fecha_str).strftime('%Y-%m-%d %H:%M:%S')
+                else:
+                    # Es solo fecha
+                    fecha_db = fecha_str
             except Exception as e:
                 print(f"Error parsing date: {e}")
                 fecha_db = None

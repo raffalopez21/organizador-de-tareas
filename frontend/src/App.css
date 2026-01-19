@@ -15,6 +15,8 @@ body {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   background-color: #0f172a;
   color: #f1f5f9;
+  color-scheme: dark;
+  /* Fuerza al navegador a usar temas oscuros en controles nativos */
 }
 
 .app {
@@ -474,8 +476,6 @@ input[type="time"]::-webkit-datetime-edit {
   font-size: 1rem;
   cursor: pointer;
   padding: 2px 4px;
-  color-scheme: dark;
-  /* Fuerza al navegador a usar colores consistentes para el dropdown */
 }
 
 .time-selector-24h select:focus {
@@ -484,13 +484,8 @@ input[type="time"]::-webkit-datetime-edit {
 }
 
 .time-option {
-  color: white;
   background-color: #0f172a;
-}
-
-/* Forzar que el hover sea legible */
-.time-selector-24h select option {
-  padding: 8px;
+  color: #f1f5f9;
 }
 
 .time-separator {

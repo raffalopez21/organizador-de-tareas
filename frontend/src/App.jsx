@@ -452,7 +452,7 @@ function TaskForm({ task, selectedDay, onSave, onCancel }) {
   const getLocalTimeString = (dateInput) => {
     if (!dateInput) return '09:00';
     if (typeof dateInput === 'string' && (dateInput.includes('T') || dateInput.includes(' '))) {
-      const timePart = dateInput.includes('T') ? dateStr.split('T')[1] : dateInput.split(' ')[1];
+      const timePart = dateInput.includes('T') ? dateInput.split('T')[1] : dateInput.split(' ')[1];
       return timePart ? timePart.substring(0, 5) : '09:00';
     }
     const date = new Date(dateInput);

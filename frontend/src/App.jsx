@@ -201,13 +201,19 @@ function App() {
         const taskToUpdate = { ...editingTask, ...taskData };
         response = await api.updateTarea(editingTask.id, taskToUpdate);
         const tareaTransformada = api.transformarTareaDelBackend(response);
-        setTasks(tasks.map(task => task.id === editingTask.id ? tareaTransformada : task));
+        setTasks(prevTasks => {
+          const updated = prevTasks.map(t => t.id === editingTask.id ? tareaTransformada : t);
+          return [...updated].sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+        });
         setEditingTask(null);
         setSuccessMessage('Tarea actualizada correctamente');
       } else {
         response = await api.createTarea(taskData);
         const tareaTransformada = api.transformarTareaDelBackend(response);
-        setTasks(prevTasks => [...prevTasks, tareaTransformada]);
+        setTasks(prevTasks => {
+          const updated = [...prevTasks, tareaTransformada];
+          return updated.sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+        });
         setSuccessMessage('Tarea creada correctamente');
       }
       setShowTaskForm(false);

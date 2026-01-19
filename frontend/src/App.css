@@ -470,22 +470,25 @@ input[type="time"]::-webkit-datetime-edit {
 }
 
 .time-selector-24h select {
-  background: transparent;
+  background-color: #0f172a;
   color: white;
-  border: none;
+  border: 1px solid #475569;
+  border-radius: 4px;
   font-size: 1rem;
   cursor: pointer;
-  padding: 2px 4px;
+  padding: 4px 8px;
+  color-scheme: dark !important;
+  /* Forzar modo oscuro en el dropdown nativo */
 }
 
 .time-selector-24h select:focus {
   outline: none;
-  color: #3B82F6;
+  border-color: #3B82F6;
 }
 
 .time-option {
-  background-color: #0f172a;
-  color: #f1f5f9;
+  background-color: #0f172a !important;
+  color: white !important;
 }
 
 .time-separator {

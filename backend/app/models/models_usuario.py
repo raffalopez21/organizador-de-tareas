@@ -15,6 +15,36 @@ class Usuario:
             return cls(*result)
         return None
 
+    @classmethod
+    def get_all(cls):
+        query = "SELECT id, nombre_usuario, email, contrasena FROM usuarios"
+        results = DatabaseConnection.fetch_all(query)
+        return [cls(*row) for row in results]
+
+    @classmethod
+    def create(cls, usuario):
+        query = """
+            INSERT INTO usuarios (nombre_usuario, email, contrasena)
+            VALUES (%s, %s, %s)
+            RETURNING id
+        """
+        params = (usuario.nombre_usuario, usuario.email, usuario.contrasena)
+        return DatabaseConnection.execute_query(query, params)
+
+    @classmethod
+    def update(cls, usuario):
+        query = """
+            UPDATE usuarios SET nombre_usuario = %s, email = %s, contrasena = %s
+            WHERE id = %s
+        """
+        params = (usuario.nombre_usuario, usuario.email, usuario.contrasena, usuario.id)
+        DatabaseConnection.execute_query(query, params)
+
+    @classmethod
+    def delete(cls, usuario_id):
+        query = "DELETE FROM usuarios WHERE id = %s"
+        DatabaseConnection.execute_query(query, (usuario_id,))
+
     def to_dict(self):
         return {
             "id": self.id,

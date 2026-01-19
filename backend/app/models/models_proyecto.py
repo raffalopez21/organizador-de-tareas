@@ -15,6 +15,7 @@ class Proyecto:
         query = """
             INSERT INTO proyectos (titulo, descripcion, usuario_id)
             VALUES (%s, %s, %s)
+            RETURNING id
         """
         params = (
             proyecto.titulo,

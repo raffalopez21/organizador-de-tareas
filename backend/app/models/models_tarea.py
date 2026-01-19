@@ -28,6 +28,7 @@ class Tarea:
             INSERT INTO tareas
             (titulo, descripcion, status, fecha, usuario_id)
             VALUES (%s, %s, %s, %s, %s)
+            RETURNING id
         """
         params = (
             tarea.titulo,

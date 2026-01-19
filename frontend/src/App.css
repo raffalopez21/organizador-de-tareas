@@ -373,10 +373,38 @@ body {
 .form-group textarea {
   width: 100%;
   background: #0f172a;
-  border: 1px solid #334155;
+  border: 1px solid #475569;
   color: white;
-  padding: 0.5rem;
-  border-radius: 4px;
+  padding: 0.75rem;
+  border-radius: 6px;
+  font-size: 1rem;
+  transition: border-color 0.2s;
+}
+
+.form-group input:focus {
+  border-color: #3B82F6;
+  outline: none;
+}
+
+/* Forzar visibilidad de iconos nativos de fecha y hora */
+input[type="date"]::-webkit-calendar-picker-indicator,
+input[type="time"]::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+  /* Hace los iconos blancos para fondo oscuro */
+  cursor: pointer;
+  padding: 5px;
+  border-radius: 3px;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator:hover,
+input[type="time"]::-webkit-calendar-picker-indicator:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* Mejora para abrir el picker al clickear cualquier parte del input */
+input[type="date"]::-webkit-datetime-edit,
+input[type="time"]::-webkit-datetime-edit {
+  cursor: pointer;
 }
 
 .form-row {

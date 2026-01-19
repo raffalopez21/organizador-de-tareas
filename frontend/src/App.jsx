@@ -506,8 +506,27 @@ function TaskForm({ task, selectedDay, onSave, onCancel }) {
           <div className="form-group"><label>Título *</label><input type="text" value={title} onChange={(e) => setTitle(e.target.value)} required /></div>
           <div className="form-group"><label>Descripción</label><textarea value={description} onChange={(e) => setDescription(e.target.value)} rows="3" /></div>
           <div className="form-row">
-            <div className="form-group"><label>Fecha *</label><input type="date" value={date} onChange={(e) => setDate(e.target.value)} required /></div>
-            <div className="form-group"><label>Hora (24h) *</label><input type="time" value={time} onChange={(e) => setTime(e.target.value)} step="60" required /></div>
+            <div className="form-group">
+              <label>Fecha *</label>
+              <input
+                type="date"
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+                onClick={(e) => e.target.showPicker?.()}
+                required
+              />
+            </div>
+            <div className="form-group">
+              <label>Hora (24h) *</label>
+              <input
+                type="time"
+                value={time}
+                onChange={(e) => setTime(e.target.value)}
+                onClick={(e) => e.target.showPicker?.()}
+                step="60"
+                required
+              />
+            </div>
           </div>
           <div className="form-actions">
             <button type="button" className="btn btn-secondary" onClick={onCancel}>Cancelar</button>

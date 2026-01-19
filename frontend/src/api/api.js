@@ -121,11 +121,20 @@ export const deleteTarea = async (tareaId) => {
 
 // Transformar tareas del backend al frontend
 export const transformarTareaDelBackend = (tareaBackend) => {
+  let fecha = tareaBackend.fecha || tareaBackend.date;
+  // Normalizar formato de fecha: Reemplazar espacios por 'T' y limpiar formato ISO si existe
+  if (fecha && typeof fecha === 'string') {
+    fecha = fecha.replace(' ', 'T');
+    // Si viene con milisegundos o Z (UTC), lo limpiamos para tener formato SQL estándar
+    if (fecha.includes('.')) fecha = fecha.split('.')[0];
+    if (fecha.endsWith('Z')) fecha = fecha.substring(0, fecha.length - 1);
+  }
+
   return {
     id: tareaBackend.id,
     title: tareaBackend.titulo || tareaBackend.title,
     description: tareaBackend.descripcion || tareaBackend.description || '',
-    date: tareaBackend.fecha || tareaBackend.date,
+    date: fecha,
     duration: tareaBackend.duracion || tareaBackend.duration || 60,
     color: tareaBackend.color || '#3B82F6',
     completed: tareaBackend.completada || tareaBackend.completed || false,

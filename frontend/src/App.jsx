@@ -26,7 +26,9 @@ function App() {
       const tareasTransformadas = Array.isArray(tareasData)
         ? tareasData.map(api.transformarTareaDelBackend)
         : [];
-      setTasks(tareasTransformadas);
+      // Ordenar cronológicamente al cargar
+      const ordenadas = tareasTransformadas.sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+      setTasks(ordenadas);
     } catch (error) {
       console.error('Error cargando datos:', error);
       setError('Error conectando al backend.');
@@ -142,13 +144,12 @@ function App() {
     if (filterStatus === 'pendientes') filteredTasks = filteredTasks.filter(task => !task.completed);
     else if (filterStatus === 'completadas') filteredTasks = filteredTasks.filter(task => task.completed);
 
-    filteredTasks.sort((a, b) => {
-      // Comparar las fechas directamente como strings ISO para orden cronológico exacto
-      const dateA = a.date || '';
-      const dateB = b.date || '';
-      return dateA.localeCompare(dateB);
+    // Ordenar cronológicamente usando comparación de strings (ISO format)
+    return [...filteredTasks].sort((a, b) => {
+      const timeA = (a.date || '').replace(' ', 'T');
+      const timeB = (b.date || '').replace(' ', 'T');
+      return timeA.localeCompare(timeB);
     });
-    return filteredTasks;
   };
 
   const toggleTaskCompletion = async (taskId) => {

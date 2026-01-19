@@ -189,42 +189,32 @@ function App() {
   };
 
   const handleEditTask = (task) => {
+    setSelectedDay(null); // Limpiar día seleccionado para evitar conflictos
     setEditingTask(task);
     setShowTaskForm(true);
   };
 
   const handleSaveTask = async (taskData) => {
-    console.log('🔵 handleSaveTask - datos recibidos:', taskData);
     try {
       let response;
       if (editingTask) {
         const taskToUpdate = { ...editingTask, ...taskData };
-        console.log('🔵 Actualizando tarea:', taskToUpdate);
         response = await api.updateTarea(editingTask.id, taskToUpdate);
-        console.log('🔵 Respuesta del backend (update):', response);
         const tareaTransformada = api.transformarTareaDelBackend(response);
-        console.log('🔵 Tarea transformada (update):', tareaTransformada);
         setTasks(tasks.map(task => task.id === editingTask.id ? tareaTransformada : task));
         setEditingTask(null);
         setSuccessMessage('Tarea actualizada correctamente');
       } else {
-        console.log('🔵 Creando nueva tarea:', taskData);
         response = await api.createTarea(taskData);
-        console.log('🔵 Respuesta del backend (create):', response);
         const tareaTransformada = api.transformarTareaDelBackend(response);
-        console.log('🔵 Tarea transformada (create):', tareaTransformada);
-        setTasks(prevTasks => {
-          console.log('🔵 Tasks anteriores:', prevTasks.length);
-          const newTasks = [...prevTasks, tareaTransformada];
-          console.log('🔵 Tasks después de agregar:', newTasks.length);
-          return newTasks;
-        });
+        setTasks(prevTasks => [...prevTasks, tareaTransformada]);
         setSuccessMessage('Tarea creada correctamente');
       }
       setShowTaskForm(false);
+      setSelectedDay(null); // Limpiar después de guardar
       setTimeout(() => setSuccessMessage(null), 3000);
     } catch (error) {
-      console.error('❌ Error al guardar tarea:', error);
+      console.error('Error al guardar tarea:', error);
       setError('Error al guardar tarea.');
     }
   };
@@ -265,7 +255,7 @@ function App() {
 
             <div className="action-buttons">
               <button className="btn btn-secondary" onClick={goToToday}>Hoy</button>
-              <button className="btn btn-primary" onClick={() => setShowTaskForm(true)}>+ Nueva Tarea</button>
+              <button className="btn btn-primary" onClick={() => { setEditingTask(null); setSelectedDay(new Date()); setShowTaskForm(true); }}>+ Nueva Tarea</button>
             </div>
           </div>
         </div>
@@ -340,7 +330,7 @@ function App() {
                         </div>
                       </div>
                     ))}
-                    <button className="add-task-mini" onClick={() => { setSelectedDay(day); setShowTaskForm(true); }}>+</button>
+                    <button className="add-task-mini" onClick={() => { setEditingTask(null); setSelectedDay(day); setShowTaskForm(true); }}>+</button>
                   </div>
                 </div>
               );
@@ -354,7 +344,7 @@ function App() {
           task={editingTask}
           selectedDay={selectedDay}
           onSave={handleSaveTask}
-          onCancel={() => { setShowTaskForm(false); setEditingTask(null); }}
+          onCancel={() => { setShowTaskForm(false); setEditingTask(null); setSelectedDay(null); }}
         />
       )}
 
@@ -447,90 +437,108 @@ function TaskDetails({ task, onClose, onEdit, onDelete }) {
 function TaskForm({ task, selectedDay, onSave, onCancel }) {
   // Función helper para obtener la fecha/hora local sin conversión UTC
   const getLocalDateString = (dateInput) => {
-    if (!dateInput) return new Date().toISOString().split('T')[0];
-    // Si dateInput es un string con formato ISO o SQL
+    if (!dateInput) {
+      const now = new Date();
+      return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    }
     if (typeof dateInput === 'string' && dateInput.includes('-')) {
-      // Manejar formato: "2026-01-19T09:00:00" o "2026-01-19 09:00:00"
       const datePart = dateInput.split('T')[0].split(' ')[0];
       return datePart;
     }
-    // Si es un objeto Date
     const date = new Date(dateInput);
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
   };
 
   const getLocalTimeString = (dateInput) => {
     if (!dateInput) return '09:00';
-    // Si dateInput es un string con formato ISO o SQL
     if (typeof dateInput === 'string' && (dateInput.includes('T') || dateInput.includes(' '))) {
-      // Manejar formato: "2026-01-19T09:00:00" o "2026-01-19 09:00:00"
-      const timePart = dateInput.includes('T')
-        ? dateInput.split('T')[1]
-        : dateInput.split(' ')[1];
-      return timePart ? timePart.substring(0, 5) : '09:00'; // HH:mm
+      const timePart = dateInput.includes('T') ? dateStr.split('T')[1] : dateInput.split(' ')[1];
+      return timePart ? timePart.substring(0, 5) : '09:00';
     }
-    // Si es un objeto Date
     const date = new Date(dateInput);
-    const hours = String(date.getHours()).padStart(2, '0');
-    const minutes = String(date.getMinutes()).padStart(2, '0');
-    return `${hours}:${minutes}`;
+    return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
   };
 
   const [title, setTitle] = useState(task ? task.title : '');
   const [description, setDescription] = useState(task ? task.description : '');
-  const [date, setDate] = useState(
-    task && task.date ? getLocalDateString(task.date) :
-      selectedDay ? getLocalDateString(selectedDay) : getLocalDateString(null)
-  );
-  const [time, setTime] = useState(
-    task && task.date ? getLocalTimeString(task.date) : '09:00'
-  );
+  const [date, setDate] = useState(() => {
+    if (task && task.date) return getLocalDateString(task.date);
+    if (selectedDay) return getLocalDateString(selectedDay);
+    return getLocalDateString(null);
+  });
+
+  // Manejo de tiempo separado para 24h
+  const initialTime = task && task.date ? getLocalTimeString(task.date) : '09:00';
+  const [hour, setHour] = useState(initialTime.split(':')[0]);
+  const [minute, setMinute] = useState(initialTime.split(':')[1]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    // Crear fecha en formato local sin conversión a UTC
-    const localDateTime = `${date}T${time}:00`;
+    const localDateTime = `${date}T${hour}:${minute}:00`;
     onSave({ title, description, date: localDateTime, usuario_id: 1 });
   };
 
   return (
-    <div className="modal-overlay">
-      <div className="modal-content">
+    <div className="modal-overlay" onClick={onCancel}>
+      <div className="modal-content glass-modal" onClick={e => e.stopPropagation()}>
         <div className="modal-header">
-          <h2>{task ? 'Editar Tarea' : 'Nueva Tarea'}</h2>
+          <h2>{task ? '✨ Editar Tarea' : '🚀 Nueva Tarea'}</h2>
         </div>
         <form onSubmit={handleSubmit}>
-          <div className="form-group"><label>Título *</label><input type="text" value={title} onChange={(e) => setTitle(e.target.value)} required /></div>
-          <div className="form-group"><label>Descripción</label><textarea value={description} onChange={(e) => setDescription(e.target.value)} rows="3" /></div>
+          <div className="form-group">
+            <label>Título de la Tarea</label>
+            <input
+              type="text"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="¿Qué hay que hacer?"
+              required
+            />
+          </div>
+          <div className="form-group">
+            <label>Descripción</label>
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Detalles adicionales..."
+              rows="3"
+            />
+          </div>
+
           <div className="form-row">
             <div className="form-group">
-              <label>Fecha *</label>
+              <label>Fecha</label>
               <input
                 type="date"
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
                 onClick={(e) => e.target.showPicker?.()}
+                onKeyDown={(e) => e.preventDefault()}
                 required
               />
             </div>
+
             <div className="form-group">
-              <label>Hora (24h) *</label>
-              <input
-                type="time"
-                value={time}
-                onChange={(e) => setTime(e.target.value)}
-                onClick={(e) => e.target.showPicker?.()}
-                step="60"
-                required
-              />
+              <label>Hora (Formato 24h)</label>
+              <div className="time-selector-24h">
+                <select value={hour} onChange={(e) => setHour(e.target.value)}>
+                  {Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0')).map(h => (
+                    <option key={h} value={h}>{h} hs</option>
+                  ))}
+                </select>
+                <span className="time-separator">:</span>
+                <select value={minute} onChange={(e) => setMinute(e.target.value)}>
+                  {['00', '15', '30', '45'].map(m => (
+                    <option key={m} value={m}>{m}</option>
+                  ))}
+                </select>
+              </div>
             </div>
           </div>
+
           <div className="form-actions">
             <button type="button" className="btn btn-secondary" onClick={onCancel}>Cancelar</button>
-            <button type="submit" className="btn btn-primary">{task ? 'Actualizar' : 'Crear'} Tarea</button>
+            <button type="submit" className="btn btn-primary-glow">{task ? 'Actualizar' : 'Crear'} Tarea</button>
           </div>
         </form>
       </div>

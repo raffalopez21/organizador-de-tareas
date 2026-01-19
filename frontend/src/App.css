@@ -474,6 +474,8 @@ input[type="time"]::-webkit-datetime-edit {
   font-size: 1rem;
   cursor: pointer;
   padding: 2px 4px;
+  color-scheme: dark;
+  /* Fuerza al navegador a usar colores consistentes para el dropdown */
 }
 
 .time-selector-24h select:focus {
@@ -482,15 +484,13 @@ input[type="time"]::-webkit-datetime-edit {
 }
 
 .time-option {
+  color: white;
   background-color: #0f172a;
-  color: #ffffff;
 }
 
-/* Nota: option:hover tiene soporte limitado en navegadores modernos,
-   pero establecemos colores base que contrasten mejor con el sistema */
-.time-selector-24h select option:checked {
-  background-color: #3B82F6 !important;
-  color: white !important;
+/* Forzar que el hover sea legible */
+.time-selector-24h select option {
+  padding: 8px;
 }
 
 .time-separator {

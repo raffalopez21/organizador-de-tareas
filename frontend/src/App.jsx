@@ -143,9 +143,9 @@ function App() {
     else if (filterStatus === 'completadas') filteredTasks = filteredTasks.filter(task => task.completed);
 
     filteredTasks.sort((a, b) => {
-      // Comparar fechas como strings para evitar conversión de timezone
-      const dateA = typeof a.date === 'string' ? a.date : a.date.toISOString();
-      const dateB = typeof b.date === 'string' ? b.date : b.date.toISOString();
+      // Comparar las fechas directamente como strings ISO para orden cronológico exacto
+      const dateA = a.date || '';
+      const dateB = b.date || '';
       return dateA.localeCompare(dateB);
     });
     return filteredTasks;

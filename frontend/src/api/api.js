@@ -1,5 +1,5 @@
 // api.js - Usar rutas relativas (sin /api)
-const API_URL = "https://organizador-de-tareas-hgpd.onrender.com/api";
+const API_URL = "https://organizador-de-tareas-xgpc.onrender.com";
 
 // Obtener tareas
 export const getTareas = async () => {

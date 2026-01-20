@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 
-const API_URL = 'http://localhost:5000/api/tareas'; // Ajustado con el prefijo /api
+const API_URL = 'https://organizador-de-tareas-xgpc.onrender.com/api/tareas';
 
 export default function ListaTareas() {
     const [tareas, setTareas] = useState([]);

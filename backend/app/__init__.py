@@ -26,6 +26,10 @@ def create_app():
     app.register_blueprint(proyecto_bp, url_prefix="/api/proyectos")
     app.register_blueprint(usuario_bp, url_prefix="/api/usuarios")
 
+    @app.route('/')
+    def index():
+        return {"message": "Organizador de Tareas API is running"}, 200
+
     @app.route('/api/health')
     def health():
         return {"status": "ok"}, 200

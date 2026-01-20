@@ -5,6 +5,8 @@ from config import Config
 
 # Importar blueprints
 from app.routes.routes_tarea import tarea_bp
+from app.routes.routes_proyecto import proyecto_bp
+from app.routes.routes_usuario import usuario_bp
 
 def create_app():
     load_dotenv()
@@ -12,14 +14,17 @@ def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
     
-    # Configurar CORS para permitir todas las origines en desarrollo
-    CORS(app)
+    # Configurar CORS para permitir todas las origines
+    # Se aplica a todas las rutas que comiencen con /api/
+    CORS(app, resources={r"/api/*": {"origins": "*"}})
     
     # Para evitar redirecciones 308, configurar strict_slashes=False
     app.url_map.strict_slashes = False
 
     # Registrar blueprints con prefijo /api
     app.register_blueprint(tarea_bp, url_prefix="/api/tareas")
+    app.register_blueprint(proyecto_bp, url_prefix="/api/proyectos")
+    app.register_blueprint(usuario_bp, url_prefix="/api/usuarios")
 
     @app.route('/api/health')
     def health():

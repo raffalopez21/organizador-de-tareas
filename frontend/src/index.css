@@ -1,20 +1,88 @@
-* {
+body {
+  background-color: #000;
+  font-family: 'Inter', sans-serif;
+  overflow-x: hidden;
+  color: #e2e8f0;
   margin: 0;
   padding: 0;
-  box-sizing: border-box;
 }
 
-body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  background-color: #0f172a;
-  color: #f1f5f9;
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #001d11;
+}
+::-webkit-scrollbar-thumb {
+  background: #00322e;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #014d3a;
+}
+
+.glass-panel {
+  background: rgba(1, 49, 16, 0.15); /* #013110 with opacity */
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+}
+
+/* Pioneer-like gradient hover effect */
+.pioneer-hover {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+.pioneer-hover::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; width: 100%; height: 100%;
+  background-image: linear-gradient(45deg, #00322e 0%, transparent 40%, transparent 60%, #013110);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  z-index: -1;
+}
+.pioneer-hover:hover::before {
+  opacity: 1;
+}
+
+@keyframes float {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+  100% { transform: translateY(0px); }
+}
+
+.animate-float-slow {
+  animation: float 8s ease-in-out infinite;
+}
+
+input[type="datetime-local"]::-webkit-calendar-picker-indicator,
+input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(1) opacity(0.5);
+  cursor: pointer;
 }
 
 #root {
-  height: 100vh;
-  overflow: hidden;
+  min-height: 100vh;
+}
+
+/* Smooth transitions for view switching */
+.view-transition-enter {
+  opacity: 0;
+  transform: translateY(10px);
+}
+.view-transition-enter-active {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 300ms, transform 300ms;
+}
+.view-transition-exit {
+  opacity: 1;
+}
+.view-transition-exit-active {
+  opacity: 0;
+  transition: opacity 300ms;
 }

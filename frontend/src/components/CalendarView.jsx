@@ -57,8 +57,8 @@ export const CalendarView = ({ tasks, mode, onToggle, onDelete, onUpdate, onTask
     const minutes = Array.from({ length: 60 }, (_, i) => i.toString().padStart(2, '0'));
 
     return (
-        <div className="overflow-x-auto pb-2 custom-scrollbar">
-            <div className={`grid gap-2 ${mode === 'month' ? 'grid-cols-7 min-w-[900px]' : 'grid-cols-1 md:grid-cols-7 md:min-w-[1200px]'}`}>
+        <div className="w-full">
+            <div className={`grid gap-2 ${mode === 'month' ? 'grid-cols-7' : 'grid-cols-1 md:grid-cols-7'}`}>
                 {/* Headers for Month View */}
                 {mode === 'month' && ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(day => (
                     <div key={day} className="text-center text-[10px] uppercase tracking-widest text-emerald-500/60 py-2">
@@ -88,7 +88,7 @@ export const CalendarView = ({ tasks, mode, onToggle, onDelete, onUpdate, onTask
                                 )}
                             </div>
 
-                            <div className="flex-grow space-y-1.5 overflow-y-auto max-h-[150px] custom-scrollbar pr-1">
+                            <div className="flex-grow space-y-1.5 overflow-y-auto max-h-[300px] custom-scrollbar pr-1">
                                 {dayTasks.map(task => {
                                     let borderColor = 'border-emerald-500';
                                     if (task.category === 'urgent') borderColor = 'border-rose-500';

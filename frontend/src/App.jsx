@@ -119,7 +119,7 @@ const App = () => {
         <div className="min-h-screen font-sans selection:bg-emerald-900/50 selection:text-emerald-50 text-slate-200">
             <Background />
 
-            <main className="relative z-10 max-w-4xl mx-auto px-4 py-8 md:py-16 flex flex-col min-h-screen">
+            <main className="relative z-10 max-w-full mx-auto px-4 md:px-12 py-8 md:py-16 flex flex-col min-h-screen">
 
                 {/* Header */}
                 <header className={`mb-8 transition-all duration-1000 ease-out transform ${mounted ? 'translate-y-0 opacity-100' : '-translate-y-10 opacity-0'}`}>

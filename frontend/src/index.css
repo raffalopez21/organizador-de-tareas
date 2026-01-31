@@ -1,10 +1,12 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 body {
   background-color: #000;
   font-family: 'Inter', sans-serif;
   overflow-x: hidden;
   color: #e2e8f0;
-  margin: 0;
-  padding: 0;
 }
 
 /* Custom Scrollbar */
@@ -59,30 +61,7 @@ body {
   animation: float 8s ease-in-out infinite;
 }
 
-input[type="datetime-local"]::-webkit-calendar-picker-indicator,
-input[type="date"]::-webkit-calendar-picker-indicator {
+input[type="datetime-local"]::-webkit-calendar-picker-indicator {
   filter: invert(1) opacity(0.5);
   cursor: pointer;
-}
-
-#root {
-  min-height: 100vh;
-}
-
-/* Smooth transitions for view switching */
-.view-transition-enter {
-  opacity: 0;
-  transform: translateY(10px);
-}
-.view-transition-enter-active {
-  opacity: 1;
-  transform: translateY(0);
-  transition: opacity 300ms, transform 300ms;
-}
-.view-transition-exit {
-  opacity: 1;
-}
-.view-transition-exit-active {
-  opacity: 0;
-  transition: opacity 300ms;
 }

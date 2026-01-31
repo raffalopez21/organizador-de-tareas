@@ -1,41 +1,29 @@
 import React, { useState } from 'react';
-
-const CATEGORIES = {
-    personal: { label: 'Personal', color: 'border-l-emerald-500' },
-    work: { label: 'Trabajo', color: 'border-l-blue-500' },
-    urgent: { label: 'Urgente', color: 'border-l-rose-500' },
-};
+import { Check, X, Pencil, Eye, EyeOff, Save, Calendar } from 'lucide-react';
+import { CATEGORIES } from '../utils/constants';
+import { format } from 'date-fns';
 
 export const TaskItem = ({ task, onToggle, onDelete, onUpdate, index }) => {
-    const categoryConfig = CATEGORIES[task.category] || CATEGORIES.personal;
+    const categoryConfig = CATEGORIES[task.category] || CATEGORIES['personal'];
     const [isEditing, setIsEditing] = useState(false);
-    const [showDetails, setShowDetails] = useState(false);
-    const [editedTitle, setEditedTitle] = useState(task.title);
-    const [editedDescription, setEditedDescription] = useState(task.description || '');
+    const [showNotes, setShowNotes] = useState(false);
+    const [editedText, setEditedText] = useState(task.text);
+    const [editedNotes, setEditedNotes] = useState(task.notes || '');
 
     const handleSave = () => {
-        onUpdate(task.id, {
+        onUpdate({
             ...task,
-            title: editedTitle,
-            description: editedDescription
+            text: editedText,
+            notes: editedNotes
         });
         setIsEditing(false);
     };
 
-    const formatDate = (dateStr) => {
-        if (!dateStr) return '';
-        const date = new Date(dateStr);
-        return date.toLocaleString('es-ES', {
-            day: 'numeric',
-            month: 'short',
-            hour: '2-digit',
-            minute: '2-digit'
-        });
-    };
+    const formattedDate = task.dueDate ? format(new Date(task.dueDate), "MMM d, h:mm a") : '';
 
     return (
         <div
-            className={`relative mb-3 rounded-lg glass-panel transition-all duration-500 ease-out border-l-2 pioneer-hover group ${task.completed ? 'border-l-gray-700 opacity-60' : categoryConfig.color
+            className={`relative mb-3 rounded-lg glass-panel transition-all duration-500 ease-out border-l-2 pioneer-hover group ${task.completed ? 'border-l-gray-700 opacity-60' : `border-l-${categoryConfig.color.split('-')[1]}-500`
                 }`}
             style={{
                 animation: `float 0.5s ease-out backwards`,
@@ -51,85 +39,92 @@ export const TaskItem = ({ task, onToggle, onDelete, onUpdate, index }) => {
                             : 'border-white/20 hover:border-emerald-500/50 text-transparent'
                         }`}
                 >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className={`transform transition-transform duration-300 ${task.completed ? 'scale-100' : 'scale-0'}`}><polyline points="20 6 9 17 4 12" /></svg>
+                    <Check size={12} className={`transform transition-transform duration-300 ${task.completed ? 'scale-100' : 'scale-0'}`} />
                 </button>
 
                 {/* Content Area */}
-                <div className="flex-grow min-w-0 mr-4 cursor-pointer" onClick={() => setShowDetails(!showDetails)}>
+                <div className="flex-grow min-w-0 mr-4">
                     {isEditing ? (
                         <div className="space-y-2">
                             <input
                                 type="text"
-                                value={editedTitle}
-                                onChange={(e) => setEditedTitle(e.target.value)}
+                                value={editedText}
+                                onChange={(e) => setEditedText(e.target.value)}
                                 className="w-full bg-black/30 border border-white/10 rounded px-2 py-1 text-sm text-white focus:border-emerald-500/50 outline-none"
-                                onClick={(e) => e.stopPropagation()}
                             />
                         </div>
                     ) : (
                         <div>
                             <p className={`text-sm font-medium tracking-wide transition-all duration-300 truncate ${task.completed ? 'text-gray-500 line-through' : 'text-gray-200'
                                 }`}>
-                                {task.title}
+                                {task.text}
                             </p>
                             <div className="flex items-center mt-1 gap-3">
                                 <div className="flex items-center text-[10px] text-emerald-500/80 font-mono tracking-tight">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1 opacity-70"><rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" /></svg>
-                                    {formatDate(task.date)}
+                                    <Calendar size={10} className="mr-1 opacity-70" />
+                                    {formattedDate}
                                 </div>
                                 <span className={`text-[9px] uppercase tracking-wider px-1.5 py-px rounded bg-white/5 ${task.completed ? 'text-gray-600' : 'text-gray-400'}`}>
-                                    {CATEGORIES[task.category]?.label || 'Personal'}
+                                    {categoryConfig.label}
                                 </span>
                             </div>
                         </div>
                     )}
                 </div>
 
-                {/* Actions */}
+                {/* Actions - Right Aligned */}
                 <div className="flex items-center gap-1 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                     {isEditing ? (
                         <button
-                            onClick={(e) => { e.stopPropagation(); handleSave(); }}
+                            onClick={handleSave}
                             className="p-1.5 text-emerald-400 hover:bg-emerald-500/10 rounded transition-colors"
-                            title="Guardar"
+                            title="Save"
                         >
-                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" /><polyline points="17 21 17 13 7 13 7 21" /><polyline points="7 3 7 8 15 8" /></svg>
+                            <Save size={14} />
                         </button>
                     ) : (
                         <>
                             <button
-                                onClick={(e) => { e.stopPropagation(); setIsEditing(true); }}
+                                onClick={() => setIsEditing(true)}
                                 className="p-1.5 text-gray-400 hover:text-emerald-300 hover:bg-white/5 rounded transition-colors"
-                                title="Editar"
+                                title="Edit"
                             >
-                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z" /></svg>
+                                <Pencil size={14} />
                             </button>
 
                             <button
-                                onClick={(e) => { e.stopPropagation(); onDelete(task.id); }}
-                                className="p-1.5 text-gray-400 hover:text-rose-400 hover:bg-rose-900/20 rounded transition-colors"
-                                title="Eliminar"
+                                onClick={() => setShowNotes(!showNotes)}
+                                className={`p-1.5 rounded transition-colors ${showNotes ? 'text-emerald-400 bg-emerald-900/20' : 'text-gray-400 hover:text-emerald-300 hover:bg-white/5'}`}
+                                title="Notes"
                             >
-                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+                                {showNotes ? <EyeOff size={14} /> : <Eye size={14} />}
+                            </button>
+
+                            <button
+                                onClick={() => onDelete(task.id)}
+                                className="p-1.5 text-gray-400 hover:text-rose-400 hover:bg-rose-900/20 rounded transition-colors"
+                                title="Delete"
+                            >
+                                <X size={14} />
                             </button>
                         </>
                     )}
                 </div>
             </div>
 
-            {/* Expandable Details */}
-            {showDetails && (
+            {/* Expandable Notes Section */}
+            {(showNotes || (isEditing && showNotes)) && (
                 <div className="px-4 pb-4 pl-12 animate-[fadeIn_0.2s_ease-out]">
                     {isEditing ? (
                         <textarea
-                            value={editedDescription}
-                            onChange={(e) => setEditedDescription(e.target.value)}
-                            placeholder="Añadir descripción..."
+                            value={editedNotes}
+                            onChange={(e) => setEditedNotes(e.target.value)}
+                            placeholder="Add notes..."
                             className="w-full bg-black/30 border border-white/10 rounded px-2 py-2 text-xs text-gray-300 focus:border-emerald-500/50 outline-none h-20 resize-none"
                         />
                     ) : (
                         <div className="text-xs text-gray-400 bg-black/20 p-3 rounded border border-white/5 italic">
-                            {task.description ? task.description : "Sin descripción."}
+                            {task.notes ? task.notes : "No notes added."}
                         </div>
                     )}
                 </div>

@@ -4,12 +4,7 @@ const API_URL = "https://organizador-de-tareas-xgpc.onrender.com/api";
 // Obtener tareas
 export const getTareas = async () => {
   try {
-    const response = await fetch(`${API_URL}/tareas`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
+    const response = await fetch(`${API_URL}/tareas`);
 
     if (!response.ok) {
       const errorText = await response.text();

@@ -30,6 +30,7 @@ export const TaskItem = ({ task, onToggle, onDelete, onUpdate, index }) => {
     };
 
     const formattedDate = task.dueDate ? format(new Date(task.dueDate), "MMM d, h:mm a") : '';
+    const isOverdue = task.dueDate && task.dueDate < Date.now() && !task.completed;
 
     // Generate options for hours and minutes
     const hours = Array.from({ length: 24 }, (_, i) => i.toString().padStart(2, '0'));
@@ -112,9 +113,14 @@ export const TaskItem = ({ task, onToggle, onDelete, onUpdate, index }) => {
                                 {task.text}
                             </p>
                             <div className="flex items-center mt-1 gap-3">
-                                <div className="flex items-center text-[10px] text-emerald-500/80 font-mono tracking-tight">
+                                <div className={`flex items-center text-[10px] font-mono tracking-tight ${isOverdue ? 'text-rose-500' : 'text-emerald-500/80'}`}>
                                     <Calendar size={10} className="mr-1 opacity-70" />
                                     {formattedDate}
+                                    {isOverdue && (
+                                        <span className="ml-2 px-1.5 py-px bg-rose-500/10 rounded-full text-[8px] font-bold uppercase animate-pulse">
+                                            vencida
+                                        </span>
+                                    )}
                                 </div>
                                 <span className={`text-[9px] uppercase tracking-wider px-1.5 py-px rounded bg-white/5 ${task.completed ? 'text-gray-600' : 'text-gray-400'}`}>
                                     {categoryConfig.label}

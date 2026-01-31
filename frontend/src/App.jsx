@@ -11,6 +11,7 @@ const App = () => {
     const [filter, setFilter] = useState('active');
     const [viewMode, setViewMode] = useState('list');
     const [mounted, setMounted] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
         setMounted(true);
@@ -18,6 +19,7 @@ const App = () => {
     }, []);
 
     const fetchTasks = async () => {
+        setIsLoading(true);
         try {
             const backendTasks = await getTareas();
             // Map backend tasks to UI format
@@ -38,6 +40,8 @@ const App = () => {
             setTasks(mappedTasks);
         } catch (error) {
             console.error("Failed to fetch tasks", error);
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -155,7 +159,16 @@ const App = () => {
                         </div>
 
                         <div className="flex-grow space-y-1 pb-20">
-                            {filteredTasks.length > 0 ? (
+                            {isLoading ? (
+                                <div className="flex flex-col items-center justify-center py-20 animate-pulse">
+                                    <div className="relative w-16 h-16 mb-6">
+                                        <div className="absolute inset-0 border-2 border-emerald-500/20 rounded-full"></div>
+                                        <div className="absolute inset-0 border-t-2 border-emerald-400 rounded-full animate-spin"></div>
+                                    </div>
+                                    <p className="text-emerald-100 font-mono text-[10px] uppercase tracking-[0.2em] mb-2">Despertando servidor</p>
+                                    <p className="text-gray-500 font-light text-xs italic">Sincronizando señales con la base de datos...</p>
+                                </div>
+                            ) : filteredTasks.length > 0 ? (
                                 filteredTasks.map((task, index) => (
                                     <TaskItem
                                         key={task.id}

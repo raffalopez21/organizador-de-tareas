@@ -96,6 +96,7 @@ export const CalendarView = ({ tasks, mode, onToggle, onDelete, onUpdate, onTask
 
                                     const isEditing = editingTaskId === task.id;
                                     const isShowingNotes = showNotesTaskId === task.id;
+                                    const isOverdue = task.dueDate && task.dueDate < Date.now() && !task.completed;
 
                                     return (
                                         <div
@@ -142,10 +143,11 @@ export const CalendarView = ({ tasks, mode, onToggle, onDelete, onUpdate, onTask
                                                 <>
                                                     <div className="flex items-center justify-between gap-1">
                                                         <div
-                                                            className={`whitespace-normal line-clamp-2 flex-grow cursor-pointer ${task.completed ? 'line-through text-gray-500' : 'text-gray-200'}`}
+                                                            className={`whitespace-normal line-clamp-2 flex-grow cursor-pointer ${task.completed ? 'line-through text-gray-500' : isOverdue ? 'text-rose-500 font-bold' : 'text-gray-200'}`}
                                                             onClick={() => onTaskClick(task.id)}
                                                         >
                                                             {task.text}
+                                                            {isOverdue && <span className="ml-1 text-[7px] bg-rose-500/10 px-1 rounded uppercase tracking-tighter">!</span>}
                                                         </div>
                                                         <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
                                                             <button

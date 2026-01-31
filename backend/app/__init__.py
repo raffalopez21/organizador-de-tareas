@@ -14,8 +14,14 @@ def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
     
-    # Configurar CORS para permitir todos los orígenes y métodos
-    CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
+    # Configurar CORS de forma explícita para producción
+    CORS(app, resources={
+        r"/*": {
+            "origins": "*",
+            "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+            "allow_headers": ["Content-Type", "Authorization", "Access-Control-Allow-Origin"]
+        }
+    }, supports_credentials=True)
     
     # Para evitar redirecciones 308, configurar strict_slashes=False
     app.url_map.strict_slashes = False

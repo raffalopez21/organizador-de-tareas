@@ -107,7 +107,7 @@ export const TaskItem = ({ task, onToggle, onDelete, onUpdate, index }) => {
                         </div>
                     ) : (
                         <div>
-                            <p className={`text-sm font-medium tracking-wide transition-all duration-300 truncate ${task.completed ? 'text-gray-500 line-through' : 'text-gray-200'
+                            <p className={`text-sm font-medium tracking-wide transition-all duration-300 whitespace-normal ${task.completed ? 'text-gray-500 line-through' : 'text-gray-200'
                                 }`}>
                                 {task.text}
                             </p>
@@ -184,8 +184,11 @@ export const TaskItem = ({ task, onToggle, onDelete, onUpdate, index }) => {
                             className="w-full bg-black/50 border border-white/10 rounded px-3 py-2 text-xs text-gray-300 focus:border-emerald-500/50 outline-none h-24 resize-none"
                         />
                     ) : (
-                        <div className="text-xs text-gray-400 bg-black/20 p-3 rounded border border-white/5 italic whitespace-pre-wrap">
-                            {task.notes ? task.notes : "No notes added."}
+                        <div className="text-xs text-gray-400 bg-black/20 p-3 rounded border border-white/5 italic whitespace-pre-wrap flex justify-between items-start">
+                            <span>{task.notes ? task.notes : "No notes added."}</span>
+                            <span className="text-emerald-500/80 font-mono text-[10px] ml-4 flex-shrink-0">
+                                {format(new Date(task.dueDate), "HH:mm")}
+                            </span>
                         </div>
                     )}
                 </div>

@@ -8,7 +8,7 @@ import { getTareas, createTarea, updateTarea, deleteTarea, transformarTareaDelBa
 
 const App = () => {
     const [tasks, setTasks] = useState([]);
-    const [filter, setFilter] = useState('all');
+    const [filter, setFilter] = useState('active');
     const [viewMode, setViewMode] = useState('list');
     const [mounted, setMounted] = useState(false);
 

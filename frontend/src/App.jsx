@@ -178,8 +178,10 @@ const App = () => {
                         <CalendarView
                             tasks={tasks}
                             mode={viewMode}
+                            onToggle={toggleTask}
+                            onDelete={deleteTask}
+                            onUpdate={updateTaskContent}
                             onTaskClick={(id) => {
-                                const el = document.getElementById(id); // Placeholder for scroll capability
                                 setViewMode('list');
                             }}
                         />
@@ -199,8 +201,8 @@ const ViewModeButton = ({ active, onClick, icon, label }) => (
     <button
         onClick={onClick}
         className={`flex items-center gap-2 px-3 py-1.5 rounded text-xs transition-all duration-300 pioneer-hover ${active
-                ? 'bg-[#00322e] text-emerald-100 border border-emerald-500/20 shadow-[0_0_15px_rgba(1,49,16,0.5)]'
-                : 'text-gray-500 hover:text-emerald-300'
+            ? 'bg-[#00322e] text-emerald-100 border border-emerald-500/20 shadow-[0_0_15px_rgba(1,49,16,0.5)]'
+            : 'text-gray-500 hover:text-emerald-300'
             }`}
     >
         {icon}
@@ -212,8 +214,8 @@ const FilterButton = ({ active, onClick, icon, label }) => (
     <button
         onClick={onClick}
         className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs transition-all duration-300 border whitespace-nowrap ${active
-                ? 'bg-white/10 border-white/20 text-white'
-                : 'border-transparent text-gray-500 hover:text-gray-300 hover:bg-white/5'
+            ? 'bg-white/10 border-white/20 text-white'
+            : 'border-transparent text-gray-500 hover:text-gray-300 hover:bg-white/5'
             }`}
     >
         {icon}

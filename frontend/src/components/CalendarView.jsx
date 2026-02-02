@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { format, startOfWeek, addDays, startOfMonth, endOfMonth, endOfWeek, eachDayOfInterval, isSameMonth, isSameDay, isToday } from 'date-fns';
-import { Check, Pencil, Eye, X, Save, Calendar as CalendarIcon, Clock } from 'lucide-react';
+import { format, startOfWeek, addDays, startOfMonth, endOfMonth, endOfWeek, eachDayOfInterval, isSameMonth, isSameDay, isToday, addWeeks, subWeeks, addMonths, subMonths } from 'date-fns';
+import { Check, Pencil, Eye, X, Save, Calendar as CalendarIcon, Clock, Square, CheckSquare, ChevronLeft, ChevronRight } from 'lucide-react';
+import { CATEGORIES } from '../utils/constants';
 
 export const CalendarView = ({ tasks, mode, onToggle, onDelete, onUpdate, onTaskClick }) => {
-    const today = new Date();
+    const [currentReferenceDate, setCurrentReferenceDate] = useState(new Date());
     const [editingTaskId, setEditingTaskId] = useState(null);
     const [showNotesTaskId, setShowNotesTaskId] = useState(null);
 
@@ -17,13 +18,23 @@ export const CalendarView = ({ tasks, mode, onToggle, onDelete, onUpdate, onTask
     // Generate days based on mode
     let days = [];
     if (mode === 'week') {
-        const start = startOfWeek(today, { weekStartsOn: 1 }); // Monday start
+        const start = startOfWeek(currentReferenceDate, { weekStartsOn: 1 }); // Monday start
         days = Array.from({ length: 7 }).map((_, i) => addDays(start, i));
     } else {
-        const start = startOfWeek(startOfMonth(today), { weekStartsOn: 1 });
-        const end = endOfWeek(endOfMonth(today), { weekStartsOn: 1 });
+        const start = startOfWeek(startOfMonth(currentReferenceDate), { weekStartsOn: 1 });
+        const end = endOfWeek(endOfMonth(currentReferenceDate), { weekStartsOn: 1 });
         days = eachDayOfInterval({ start, end });
     }
+
+    const navigate = (direction) => {
+        if (mode === 'week') {
+            setCurrentReferenceDate(direction === 'next' ? addWeeks(currentReferenceDate, 1) : subWeeks(currentReferenceDate, 1));
+        } else {
+            setCurrentReferenceDate(direction === 'next' ? addMonths(currentReferenceDate, 1) : subMonths(currentReferenceDate, 1));
+        }
+    };
+
+    const goToToday = () => setCurrentReferenceDate(new Date());
 
     const getTasksForDay = (date) => {
         return tasks.filter(task => {
@@ -57,8 +68,28 @@ export const CalendarView = ({ tasks, mode, onToggle, onDelete, onUpdate, onTask
     const minutes = Array.from({ length: 60 }, (_, i) => i.toString().padStart(2, '0'));
 
     return (
-        <div className="w-full">
-            <div className={`grid gap-2 ${mode === 'month' ? 'grid-cols-7' : 'grid-cols-1 md:grid-cols-7'}`}>
+        <div className="w-full h-full pb-10 overflow-x-auto">
+            {/* Calendar Controls */}
+            <div className="flex items-center justify-between mb-6 px-1">
+                <div className="flex items-center gap-4">
+                    <h2 className="text-xl font-serif italic text-emerald-100 min-w-[180px]">
+                        {format(currentReferenceDate, mode === 'week' ? 'MMMM yyyy' : 'MMMM yyyy')}
+                    </h2>
+                    <div className="flex bg-black/40 rounded-lg p-1 border border-white/5">
+                        <button onClick={() => navigate('prev')} className="p-1.5 hover:bg-white/5 rounded text-gray-400 hover:text-emerald-400 transition-colors">
+                            <ChevronLeft size={18} />
+                        </button>
+                        <button onClick={goToToday} className="px-3 text-[10px] uppercase tracking-widest text-gray-500 hover:text-emerald-400 transition-colors font-mono">
+                            Hoy
+                        </button>
+                        <button onClick={() => navigate('next')} className="p-1.5 hover:bg-white/5 rounded text-gray-400 hover:text-emerald-400 transition-colors">
+                            <ChevronRight size={18} />
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div className={`grid gap-2 min-w-[1000px] ${mode === 'month' ? 'grid-cols-7 grid-flow-row auto-rows-min' : 'grid-cols-1 md:grid-cols-7'}`}>
                 {/* Headers for Month View */}
                 {mode === 'month' && ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(day => (
                     <div key={day} className="text-center text-[10px] uppercase tracking-widest text-emerald-500/60 py-2">
@@ -68,13 +99,13 @@ export const CalendarView = ({ tasks, mode, onToggle, onDelete, onUpdate, onTask
 
                 {days.map((day) => {
                     const dayTasks = getTasksForDay(day);
-                    const isCurrentMonth = mode === 'week' || isSameMonth(day, today);
+                    const isCurrentMonth = mode === 'week' || isSameMonth(day, currentReferenceDate);
                     const isCurrentDay = isToday(day);
 
                     return (
                         <div
                             key={day.toISOString()}
-                            className={`min-h-[120px] glass-panel rounded-lg p-2 flex flex-col transition-all duration-300 hover:bg-white/5 ${!isCurrentMonth ? 'opacity-30' : 'opacity-100'
+                            className={`min-h-[150px] h-auto glass-panel rounded-lg p-2 flex flex-col transition-all duration-300 hover:bg-white/5 ${!isCurrentMonth ? 'opacity-30' : 'opacity-100'
                                 } ${isCurrentDay ? 'border-emerald-500/30 bg-emerald-900/10' : ''}`}
                         >
                             <div className="flex justify-between items-start mb-2">
@@ -88,12 +119,10 @@ export const CalendarView = ({ tasks, mode, onToggle, onDelete, onUpdate, onTask
                                 )}
                             </div>
 
-                            <div className="flex-grow space-y-1.5 overflow-y-auto max-h-[300px] custom-scrollbar pr-1">
+                            <div className="flex-grow space-y-2 pr-1">
                                 {dayTasks.map(task => {
-                                    let borderColor = 'border-emerald-500';
-                                    if (task.category === 'urgent') borderColor = 'border-rose-500';
-                                    if (task.category === 'work') borderColor = 'border-blue-500';
-
+                                    const categoryConfig = CATEGORIES[task.category] || CATEGORIES['personal'];
+                                    const categoryColor = categoryConfig.color.replace('bg-', '');
                                     const isEditing = editingTaskId === task.id;
                                     const isShowingNotes = showNotesTaskId === task.id;
                                     const isOverdue = task.dueDate && task.dueDate < Date.now() && !task.completed;
@@ -101,8 +130,8 @@ export const CalendarView = ({ tasks, mode, onToggle, onDelete, onUpdate, onTask
                                     return (
                                         <div
                                             key={task.id}
-                                            className={`group relative text-[9px] p-2 rounded border-l-2 transition-all ${task.completed ? 'opacity-50' : ''
-                                                } ${borderColor} bg-black/20 hover:bg-black/40`}
+                                            className={`group relative text-xs p-2 rounded border-l-2 transition-all ${task.completed ? 'bg-emerald-950/20 opacity-60' : 'bg-black/40'
+                                                } border-l-${categoryColor}-500 hover:bg-black/60 shadow-sm`}
                                         >
                                             {isEditing ? (
                                                 <div className="space-y-2">
@@ -141,38 +170,46 @@ export const CalendarView = ({ tasks, mode, onToggle, onDelete, onUpdate, onTask
                                                 </div>
                                             ) : (
                                                 <>
-                                                    <div className="flex items-center justify-between gap-1">
+                                                    <div className="flex items-start gap-2">
+                                                        {/* Checkbox on the left */}
+                                                        <button
+                                                            onClick={() => onToggle(task.id)}
+                                                            className={`mt-0.5 flex-shrink-0 transition-colors ${task.completed ? 'text-emerald-400' : 'text-gray-500 hover:text-emerald-400'}`}
+                                                        >
+                                                            {task.completed ? <CheckSquare size={12} /> : <Square size={12} />}
+                                                        </button>
+
+                                                        {/* Task text wraps as needed */}
                                                         <div
-                                                            className={`whitespace-normal line-clamp-2 flex-grow cursor-pointer ${task.completed ? 'line-through text-gray-500' : isOverdue ? 'text-rose-500 font-bold' : 'text-gray-200'}`}
+                                                            className={`flex-grow cursor-pointer break-words leading-normal py-0.5 ${task.completed ? 'line-through text-gray-500' : isOverdue ? 'text-rose-500 font-bold' : 'text-gray-100'}`}
                                                             onClick={() => onTaskClick(task.id)}
                                                         >
                                                             {task.text}
-                                                            {isOverdue && <span className="ml-1 text-[7px] bg-rose-500/10 px-1 rounded uppercase tracking-tighter">!</span>}
+                                                            {isOverdue && <span className="ml-1 text-[10px] bg-rose-500/20 px-1.5 rounded uppercase tracking-tighter text-rose-400 font-bold">!</span>}
                                                         </div>
-                                                        <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+
+                                                        {/* Actions on the right - always visible but subtle, pops on hover */}
+                                                        <div className="flex items-center gap-1 flex-shrink-0 opacity-40 group-hover:opacity-100 transition-opacity ml-1">
                                                             <button
-                                                                onClick={() => onToggle(task.id)}
-                                                                className={`p-0.5 rounded ${task.completed ? 'text-emerald-400 bg-emerald-900/20' : 'text-gray-500 hover:text-emerald-400'}`}
+                                                                onClick={() => setShowNotesTaskId(isShowingNotes ? null : task.id)}
+                                                                className={`p-1 rounded hover:bg-white/10 ${isShowingNotes ? 'text-emerald-400 bg-emerald-900/20' : 'text-gray-400 hover:text-emerald-300'}`}
+                                                                title="Notes"
                                                             >
-                                                                <Check size={9} />
+                                                                <Eye size={11} />
                                                             </button>
                                                             <button
                                                                 onClick={() => startEditing(task)}
-                                                                className="p-0.5 text-gray-500 hover:text-emerald-300 hover:bg-white/10 rounded"
+                                                                className="p-1 text-gray-400 hover:text-emerald-300 hover:bg-white/10 rounded"
+                                                                title="Edit"
                                                             >
-                                                                <Pencil size={9} />
-                                                            </button>
-                                                            <button
-                                                                onClick={() => setShowNotesTaskId(isShowingNotes ? null : task.id)}
-                                                                className={`p-0.5 rounded ${isShowingNotes ? 'text-emerald-400 bg-emerald-900/20' : 'text-gray-500 hover:text-emerald-300'}`}
-                                                            >
-                                                                <Eye size={9} />
+                                                                <Pencil size={11} />
                                                             </button>
                                                             <button
                                                                 onClick={() => onDelete(task.id)}
-                                                                className="p-0.5 text-gray-500 hover:text-rose-400 hover:bg-rose-900/10 rounded"
+                                                                className="p-1 text-gray-400 hover:text-rose-400 hover:bg-rose-900/10 rounded"
+                                                                title="Delete"
                                                             >
-                                                                <X size={9} />
+                                                                <X size={11} />
                                                             </button>
                                                         </div>
                                                     </div>

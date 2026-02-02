@@ -45,14 +45,12 @@ const App = () => {
         }
     };
 
-    const addTask = async (text, category, dueDate) => {
+    const addTask = async (text, category, dueDate, notes = '') => {
         try {
             // Create payload for backend
-            // We are losing 'category' as backend doesn't support it explicitly yet.
-            // We could prepend it to description if we wanted to persist it.
             const newTaskPayload = {
                 title: text,
-                description: '', // We could store category here
+                description: notes,
                 date: new Date(dueDate).toISOString(),
                 completed: false
             };

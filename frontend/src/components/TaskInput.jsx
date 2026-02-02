@@ -4,6 +4,7 @@ import { CATEGORIES } from '../utils/constants';
 
 export const TaskInput = ({ onAdd }) => {
     const [text, setText] = useState('');
+    const [notes, setNotes] = useState('');
     const [category, setCategory] = useState('personal');
 
     // Initialize with current date and time
@@ -12,16 +13,17 @@ export const TaskInput = ({ onAdd }) => {
     const [hour, setHour] = useState(now.getHours().toString().padStart(2, '0'));
     const [minute, setMinute] = useState(now.getMinutes().toString().padStart(2, '0'));
 
-    const [isFocused, setIsFocused] = useState(false);
+    const [isExpanded, setIsExpanded] = useState(false);
 
     const handleSubmit = (e) => {
         e.preventDefault();
         if (text.trim()) {
-            // Combine date, hour, and minute into a timestamp
             const dueStamp = new Date(`${date}T${hour}:${minute}:00`).getTime();
-            onAdd(text, category, dueStamp);
+            onAdd(text, category, dueStamp, notes);
             setText('');
-            // Reset to current time after adding
+            setNotes('');
+            setIsExpanded(false);
+
             const nextNow = new Date();
             setDate(nextNow.toISOString().split('T')[0]);
             setHour(nextNow.getHours().toString().padStart(2, '0'));
@@ -29,30 +31,43 @@ export const TaskInput = ({ onAdd }) => {
         }
     };
 
-    // Generate options for hours and minutes
     const hours = Array.from({ length: 24 }, (_, i) => i.toString().padStart(2, '0'));
     const minutes = Array.from({ length: 60 }, (_, i) => i.toString().padStart(2, '0'));
 
     return (
         <form onSubmit={handleSubmit} className="relative z-10 mb-8">
             <div
-                className={`glass-panel rounded-2xl p-2 transition-all duration-500 pioneer-hover ${isFocused ? 'ring-1 ring-white/20 shadow-[0_0_30px_rgba(1,49,16,0.3)]' : ''
+                className={`glass-panel rounded-2xl p-2 transition-all duration-500 pioneer-hover ${isExpanded ? 'ring-1 ring-white/20 shadow-[0_0_40px_rgba(1,49,16,0.4)]' : ''
                     }`}
             >
-                <div className="flex flex-col md:flex-row md:items-center px-4 py-2 gap-4">
+                <div className="flex flex-col px-4 py-2 gap-2">
                     <input
                         type="text"
                         value={text}
-                        onChange={(e) => setText(e.target.value)}
-                        onFocus={() => setIsFocused(true)}
-                        onBlur={() => setIsFocused(false)}
+                        onChange={(e) => {
+                            setText(e.target.value);
+                            if (e.target.value.length > 0) setIsExpanded(true);
+                        }}
+                        onFocus={() => {
+                            if (text.length > 0) setIsExpanded(true);
+                        }}
                         placeholder="New task..."
                         className="flex-grow bg-transparent border-none outline-none text-white placeholder-gray-500 text-lg font-light tracking-wide h-10 md:h-12"
                     />
 
+                    {/* Expandable Notes Area */}
+                    <div className={`overflow-hidden transition-all duration-500 ease-in-out ${isExpanded ? 'max-h-32 opacity-100 mt-2 mb-4' : 'max-h-0 opacity-0'}`}>
+                        <textarea
+                            value={notes}
+                            onChange={(e) => setNotes(e.target.value)}
+                            placeholder="Add more details or notes..."
+                            className="w-full bg-black/20 border border-white/5 rounded-xl p-3 text-sm text-gray-300 placeholder-gray-600 outline-none focus:border-emerald-500/30 transition-colors h-24 resize-none italic"
+                        />
+                    </div>
+
                     <div className="flex flex-wrap items-center gap-2">
                         {/* Date Selector */}
-                        <div className="relative group flex items-center bg-black/20 border border-white/10 rounded-lg px-2 overflow-hidden">
+                        <div className="relative group flex items-center bg-black/20 border border-white/10 rounded-lg px-2 overflow-hidden hover:border-emerald-500/30 transition-colors">
                             <Calendar size={14} className="text-emerald-500/70 mr-1" />
                             <input
                                 type="date"
@@ -63,7 +78,7 @@ export const TaskInput = ({ onAdd }) => {
                         </div>
 
                         {/* Time Selector */}
-                        <div className="relative group flex items-center bg-black/20 border border-white/10 rounded-lg px-2">
+                        <div className="relative group flex items-center bg-black/20 border border-white/10 rounded-lg px-2 hover:border-emerald-500/30 transition-colors">
                             <Clock size={14} className="text-emerald-500/70 mr-1" />
                             <div className="flex items-center gap-1">
                                 <select
@@ -103,16 +118,27 @@ export const TaskInput = ({ onAdd }) => {
                         ))}
                     </div>
 
-                    <button
-                        type="submit"
-                        disabled={!text.trim()}
-                        className={`w-8 h-8 rounded-full flex items-center justify-center transition-all duration-300 ${text.trim()
-                            ? 'bg-emerald-600 text-white hover:bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.3)]'
-                            : 'bg-white/5 text-gray-600 cursor-not-allowed'
-                            }`}
-                    >
-                        <Plus size={16} />
-                    </button>
+                    <div className="flex items-center gap-3">
+                        {isExpanded && (
+                            <button
+                                type="button"
+                                onClick={() => setIsExpanded(false)}
+                                className="text-[10px] uppercase tracking-wider text-gray-500 hover:text-gray-300 transition-colors px-2"
+                            >
+                                Simple view
+                            </button>
+                        )}
+                        <button
+                            type="submit"
+                            disabled={!text.trim()}
+                            className={`w-8 h-8 rounded-full flex items-center justify-center transition-all duration-300 ${text.trim()
+                                ? 'bg-emerald-600 text-white hover:bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.3)]'
+                                : 'bg-white/5 text-gray-600 cursor-not-allowed'
+                                }`}
+                        >
+                            <Plus size={16} />
+                        </button>
+                    </div>
                 </div>
             </div>
         </form>

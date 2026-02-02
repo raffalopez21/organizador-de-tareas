@@ -170,26 +170,28 @@ export const CalendarView = ({ tasks, mode, onToggle, onDelete, onUpdate, onTask
                                                 </div>
                                             ) : (
                                                 <>
-                                                    <div className="flex items-start gap-2">
-                                                        {/* Checkbox on the left */}
-                                                        <button
-                                                            onClick={() => onToggle(task.id)}
-                                                            className={`mt-0.5 flex-shrink-0 transition-colors ${task.completed ? 'text-emerald-400' : 'text-gray-500 hover:text-emerald-400'}`}
-                                                        >
-                                                            {task.completed ? <CheckSquare size={12} /> : <Square size={12} />}
-                                                        </button>
+                                                    <div className="flex items-start gap-1 justify-between">
+                                                        <div className="flex items-start gap-2 flex-grow min-w-0">
+                                                            {/* Checkbox on the left */}
+                                                            <button
+                                                                onClick={() => onToggle(task.id)}
+                                                                className={`mt-0.5 flex-shrink-0 transition-colors ${task.completed ? 'text-emerald-400' : 'text-gray-500 hover:text-emerald-400'}`}
+                                                            >
+                                                                {task.completed ? <CheckSquare size={12} /> : <Square size={12} />}
+                                                            </button>
 
-                                                        {/* Task text wraps as needed */}
-                                                        <div
-                                                            className={`flex-grow cursor-pointer break-words leading-normal py-0.5 ${task.completed ? 'line-through text-gray-500' : isOverdue ? 'text-rose-500 font-bold' : 'text-gray-100'}`}
-                                                            onClick={() => onTaskClick(task.id)}
-                                                        >
-                                                            {task.text}
-                                                            {isOverdue && <span className="ml-1 text-[10px] bg-rose-500/20 px-1.5 rounded uppercase tracking-tighter text-rose-400 font-bold">!</span>}
+                                                            {/* Task text wraps as needed */}
+                                                            <div
+                                                                className={`flex-grow cursor-pointer break-words leading-tight py-0.5 min-w-0 ${task.completed ? 'line-through text-gray-500' : isOverdue ? 'text-rose-500 font-bold' : 'text-gray-100'}`}
+                                                                onClick={() => onTaskClick(task.id)}
+                                                            >
+                                                                {task.text}
+                                                                {isOverdue && <span className="ml-1 text-[10px] bg-rose-500/20 px-1.5 rounded-full uppercase tracking-tighter text-rose-400 font-bold whitespace-nowrap">!</span>}
+                                                            </div>
                                                         </div>
 
-                                                        {/* Actions on the right - always visible but subtle, pops on hover */}
-                                                        <div className="flex items-center gap-1 flex-shrink-0 opacity-40 group-hover:opacity-100 transition-opacity ml-1">
+                                                        {/* Actions on the right - dedicated space */}
+                                                        <div className="flex items-center gap-0.5 flex-shrink-0 opacity-40 group-hover:opacity-100 transition-opacity ml-2 mt-0.5 bg-black/20 md:bg-transparent rounded-md p-0.5">
                                                             <button
                                                                 onClick={() => setShowNotesTaskId(isShowingNotes ? null : task.id)}
                                                                 className={`p-1 rounded hover:bg-white/10 ${isShowingNotes ? 'text-emerald-400 bg-emerald-900/20' : 'text-gray-400 hover:text-emerald-300'}`}

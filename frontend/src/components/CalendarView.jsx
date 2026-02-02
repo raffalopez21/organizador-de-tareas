@@ -89,7 +89,7 @@ export const CalendarView = ({ tasks, mode, onToggle, onDelete, onUpdate, onTask
                 </div>
             </div>
 
-            <div className={`grid gap-2 min-w-[1000px] ${mode === 'month' ? 'grid-cols-7 grid-flow-row auto-rows-min' : 'grid-cols-1 md:grid-cols-7'}`}>
+            <div className={`grid gap-3 min-w-[1400px] ${mode === 'month' ? 'grid-cols-7 grid-flow-row auto-rows-min' : 'grid-cols-1 md:grid-cols-7'}`}>
                 {/* Headers for Month View */}
                 {mode === 'month' && ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(day => (
                     <div key={day} className="text-center text-[10px] uppercase tracking-widest text-emerald-500/60 py-2">
@@ -105,8 +105,8 @@ export const CalendarView = ({ tasks, mode, onToggle, onDelete, onUpdate, onTask
                     return (
                         <div
                             key={day.toISOString()}
-                            className={`min-h-[150px] h-auto glass-panel rounded-lg p-2 flex flex-col transition-all duration-300 hover:bg-white/5 ${!isCurrentMonth ? 'opacity-30' : 'opacity-100'
-                                } ${isCurrentDay ? 'border-emerald-500/30 bg-emerald-900/10' : ''}`}
+                            className={`min-h-[200px] h-auto glass-panel rounded-xl p-3 flex flex-col transition-all duration-300 hover:bg-white/[0.03] border-white/5 ${!isCurrentMonth ? 'opacity-20' : 'opacity-100'
+                                } ${isCurrentDay ? 'border-emerald-500/40 bg-emerald-900/5 shadow-[0_0_20px_rgba(16,185,129,0.05)]' : ''}`}
                         >
                             <div className="flex justify-between items-start mb-2">
                                 <span className={`text-xs font-mono ${isCurrentDay ? 'text-emerald-400 font-bold' : 'text-gray-500'}`}>
@@ -130,8 +130,8 @@ export const CalendarView = ({ tasks, mode, onToggle, onDelete, onUpdate, onTask
                                     return (
                                         <div
                                             key={task.id}
-                                            className={`group relative text-xs p-2 rounded border-l-2 transition-all ${task.completed ? 'bg-emerald-950/20 opacity-60' : 'bg-black/40'
-                                                } border-l-${categoryColor}-500 hover:bg-black/60 shadow-sm`}
+                                            className={`group relative text-[13px] p-2.5 rounded-lg border-l-[3px] transition-all duration-200 ${task.completed ? 'bg-emerald-950/10 opacity-50' : 'bg-white/[0.03]'
+                                                } border-l-${categoryColor}-500 hover:bg-white/[0.07] hover:translate-x-0.5 shadow-sm mb-1`}
                                         >
                                             {isEditing ? (
                                                 <div className="space-y-2">
@@ -175,43 +175,43 @@ export const CalendarView = ({ tasks, mode, onToggle, onDelete, onUpdate, onTask
                                                             {/* Checkbox on the left */}
                                                             <button
                                                                 onClick={() => onToggle(task.id)}
-                                                                className={`mt-0.5 flex-shrink-0 transition-colors ${task.completed ? 'text-emerald-400' : 'text-gray-500 hover:text-emerald-400'}`}
+                                                                className={`mt-1 flex-shrink-0 transition-all duration-300 hover:scale-110 ${task.completed ? 'text-emerald-400' : 'text-gray-400 hover:text-emerald-400'}`}
                                                             >
-                                                                {task.completed ? <CheckSquare size={12} /> : <Square size={12} />}
+                                                                {task.completed ? <CheckSquare size={14} strokeWidth={2.5} /> : <Square size={14} strokeWidth={2} />}
                                                             </button>
 
                                                             {/* Task text wraps as needed */}
                                                             <div
-                                                                className={`flex-grow cursor-pointer break-words leading-tight py-0.5 min-w-0 ${task.completed ? 'line-through text-gray-500' : isOverdue ? 'text-rose-500 font-bold' : 'text-gray-100'}`}
+                                                                className={`flex-grow cursor-pointer break-words leading-[1.4] py-0.5 min-w-0 font-medium tracking-tight ${task.completed ? 'line-through text-gray-500 font-normal' : isOverdue ? 'text-rose-400 font-bold' : 'text-slate-100'}`}
                                                                 onClick={() => onTaskClick(task.id)}
                                                             >
                                                                 {task.text}
-                                                                {isOverdue && <span className="ml-1 text-[10px] bg-rose-500/20 px-1.5 rounded-full uppercase tracking-tighter text-rose-400 font-bold whitespace-nowrap">!</span>}
+                                                                {isOverdue && <span className="ml-1.5 text-[9px] bg-rose-500/20 px-1.5 py-0.5 rounded-full uppercase tracking-widest text-rose-400 font-bold whitespace-nowrap border border-rose-500/20">vencida</span>}
                                                             </div>
                                                         </div>
 
                                                         {/* Actions on the right - dedicated space */}
-                                                        <div className="flex items-center gap-0.5 flex-shrink-0 opacity-40 group-hover:opacity-100 transition-opacity ml-2 mt-0.5 bg-black/20 md:bg-transparent rounded-md p-0.5">
+                                                        <div className="flex items-center gap-0.5 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-all duration-200 ml-2 mt-0.5 translate-x-1 group-hover:translate-x-0">
                                                             <button
                                                                 onClick={() => setShowNotesTaskId(isShowingNotes ? null : task.id)}
-                                                                className={`p-1 rounded hover:bg-white/10 ${isShowingNotes ? 'text-emerald-400 bg-emerald-900/20' : 'text-gray-400 hover:text-emerald-300'}`}
-                                                                title="Notes"
+                                                                className={`p-1.5 rounded-md hover:bg-white/10 ${isShowingNotes ? 'text-emerald-400 bg-emerald-900/20' : 'text-gray-400 hover:text-emerald-300'}`}
+                                                                title="Notas"
                                                             >
-                                                                <Eye size={11} />
+                                                                <Eye size={13} strokeWidth={2} />
                                                             </button>
                                                             <button
                                                                 onClick={() => startEditing(task)}
-                                                                className="p-1 text-gray-400 hover:text-emerald-300 hover:bg-white/10 rounded"
-                                                                title="Edit"
+                                                                className="p-1.5 text-gray-400 hover:text-emerald-300 hover:bg-white/10 rounded-md transition-colors"
+                                                                title="Editar"
                                                             >
-                                                                <Pencil size={11} />
+                                                                <Pencil size={13} strokeWidth={2} />
                                                             </button>
                                                             <button
                                                                 onClick={() => onDelete(task.id)}
-                                                                className="p-1 text-gray-400 hover:text-rose-400 hover:bg-rose-900/10 rounded"
-                                                                title="Delete"
+                                                                className="p-1.5 text-gray-400 hover:text-rose-400 hover:bg-rose-900/20 rounded-md transition-colors"
+                                                                title="Eliminar"
                                                             >
-                                                                <X size={11} />
+                                                                <X size={13} strokeWidth={2} />
                                                             </button>
                                                         </div>
                                                     </div>

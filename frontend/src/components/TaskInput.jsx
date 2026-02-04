@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Calendar, Clock } from 'lucide-react';
 import { CATEGORIES } from '../utils/constants';
 
@@ -102,19 +103,21 @@ export const TaskInput = ({ onAdd }) => {
                 </div>
 
                 <div className="flex items-center justify-between px-4 pb-2 border-t border-white/5 pt-3">
-                    <div className="flex gap-2">
+                    <div className="flex flex-wrap gap-2">
                         {Object.keys(CATEGORIES).map((cat) => (
-                            <button
+                            <motion.button
+                                whileHover={{ y: -2 }}
+                                whileTap={{ scale: 0.95 }}
                                 key={cat}
                                 type="button"
                                 onClick={() => setCategory(cat)}
-                                className={`text-[10px] uppercase tracking-widest px-3 py-1.5 rounded-sm transition-all duration-300 border ${category === cat
-                                    ? `bg-[#00322e] border-emerald-500/50 text-white shadow-[0_0_10px_rgba(16,185,129,0.1)]`
-                                    : 'bg-transparent border-white/5 text-gray-500 hover:border-white/20'
+                                className={`text-[9px] uppercase tracking-[0.2em] px-3 py-1.5 rounded-full transition-all duration-300 border ${category === cat
+                                    ? `bg-emerald-500/20 border-emerald-500/50 text-emerald-300 shadow-[0_0_15px_rgba(16,185,129,0.2)]`
+                                    : 'bg-white/5 border-white/5 text-gray-500 hover:border-white/20 hover:text-gray-300'
                                     }`}
                             >
                                 {CATEGORIES[cat].label}
-                            </button>
+                            </motion.button>
                         ))}
                     </div>
 
@@ -128,16 +131,18 @@ export const TaskInput = ({ onAdd }) => {
                                 Simple view
                             </button>
                         )}
-                        <button
+                        <motion.button
+                            whileHover={{ scale: 1.1, rotate: 90 }}
+                            whileTap={{ scale: 0.9 }}
                             type="submit"
                             disabled={!text.trim()}
-                            className={`w-8 h-8 rounded-full flex items-center justify-center transition-all duration-300 ${text.trim()
-                                ? 'bg-emerald-600 text-white hover:bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.3)]'
-                                : 'bg-white/5 text-gray-600 cursor-not-allowed'
+                            className={`w-10 h-10 rounded-2xl flex items-center justify-center transition-all duration-500 ${text.trim()
+                                ? 'bg-gradient-to-br from-emerald-400 to-emerald-600 text-white hover:shadow-[0_0_25px_rgba(16,185,129,0.5)] active:scale-95'
+                                : 'bg-white/5 text-gray-700 cursor-not-allowed'
                                 }`}
                         >
-                            <Plus size={16} />
-                        </button>
+                            <Plus size={20} strokeWidth={3} />
+                        </motion.button>
                     </div>
                 </div>
             </div>

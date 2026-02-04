@@ -1,12 +1,29 @@
 import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Check, X, Pencil, Eye, EyeOff, Save, Calendar, Clock } from 'lucide-react';
 import { CATEGORIES } from '../utils/constants';
 import { format } from 'date-fns';
+
+const Particle = ({ color }) => (
+    <motion.div
+        initial={{ x: 0, y: 0, scale: 1, opacity: 1 }}
+        animate={{
+            x: (Math.random() - 0.5) * 100,
+            y: (Math.random() - 0.5) * 100,
+            scale: 0,
+            opacity: 0
+        }}
+        transition={{ duration: 0.8, ease: "easeOut" }}
+        className={`absolute w-1.5 h-1.5 rounded-full ${color}`}
+        style={{ left: '50%', top: '50%' }}
+    />
+);
 
 export const TaskItem = ({ task, onToggle, onDelete, onUpdate, index }) => {
     const categoryConfig = CATEGORIES[task.category] || CATEGORIES['personal'];
     const [isEditing, setIsEditing] = useState(false);
     const [showNotes, setShowNotes] = useState(false);
+    const [showParticles, setShowParticles] = useState(false);
 
     // Editing states
     const [editedText, setEditedText] = useState(task.text);
@@ -17,6 +34,14 @@ export const TaskItem = ({ task, onToggle, onDelete, onUpdate, index }) => {
     const [editedDate, setEditedDate] = useState(initialDate.toISOString().split('T')[0]);
     const [editedHour, setEditedHour] = useState(initialDate.getHours().toString().padStart(2, '0'));
     const [editedMinute, setEditedMinute] = useState(initialDate.getMinutes().toString().padStart(2, '0'));
+
+    const handleToggle = () => {
+        if (!task.completed) {
+            setShowParticles(true);
+            setTimeout(() => setShowParticles(false), 800);
+        }
+        onToggle(task.id);
+    };
 
     const handleSave = () => {
         const newDueStamp = new Date(`${editedDate}T${editedHour}:${editedMinute}:00`).getTime();
@@ -31,32 +56,45 @@ export const TaskItem = ({ task, onToggle, onDelete, onUpdate, index }) => {
 
     const formattedDate = task.dueDate ? format(new Date(task.dueDate), "MMM d, h:mm a") : '';
     const isOverdue = task.dueDate && task.dueDate < Date.now() && !task.completed;
+    const isNearDeadline = task.dueDate && task.dueDate > Date.now() && task.dueDate - Date.now() < 24 * 60 * 60 * 1000 && !task.completed;
 
     // Generate options for hours and minutes
     const hours = Array.from({ length: 24 }, (_, i) => i.toString().padStart(2, '0'));
     const minutes = Array.from({ length: 60 }, (_, i) => i.toString().padStart(2, '0'));
 
     return (
-        <div
-            className={`relative mb-3 rounded-lg glass-panel transition-all duration-500 ease-out border-l-2 pioneer-hover group ${task.completed ? 'border-l-gray-700 opacity-60' : `border-l-${categoryConfig.color.split('-')[1]}-500`
-                }`}
-            style={{
-                animation: `float 0.5s ease-out backwards`,
-                animationDelay: `${index * 50}ms`
-            }}
+        <motion.div
+            layout
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            transition={{ duration: 0.4, delay: index * 0.05 }}
+            className={`relative mb-4 rounded-2xl glass-panel-heavy border-l-[3px] group ${task.completed ? 'border-l-gray-700 opacity-50' : `border-l-${categoryConfig.color.split('-')[1]}-500 shadow-[0_4px_20px_rgba(0,0,0,0.3)]`
+                } ${(isOverdue || isNearDeadline) ? 'glow-border-emerald' : ''} hover:translate-x-1 hover:bg-white/[0.05]`}
         >
             <div className="flex items-center p-4">
                 {/* Checkbox */}
                 {!isEditing && (
-                    <button
-                        onClick={() => onToggle(task.id)}
-                        className={`flex-shrink-0 w-5 h-5 rounded border transition-all duration-300 flex items-center justify-center mr-4 ${task.completed
-                            ? 'bg-emerald-900/40 border-emerald-500/50 text-emerald-400'
-                            : 'border-white/20 hover:border-emerald-500/50 text-transparent'
-                            }`}
-                    >
-                        <Check size={12} className={`transform transition-transform duration-300 ${task.completed ? 'scale-100' : 'scale-0'}`} />
-                    </button>
+                    <div className="relative">
+                        <motion.button
+                            whileHover={{ scale: 1.1 }}
+                            whileTap={{ scale: 0.9 }}
+                            onClick={handleToggle}
+                            className={`flex-shrink-0 w-6 h-6 rounded-full border-2 transition-all duration-500 flex items-center justify-center mr-5 ${task.completed
+                                ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-400'
+                                : 'border-white/10 hover:border-emerald-500/40 text-transparent'
+                                }`}
+                        >
+                            <Check size={14} strokeWidth={3} className={`transform transition-all duration-500 ${task.completed ? 'scale-100 rotate-0' : 'scale-0 -rotate-45'}`} />
+                        </motion.button>
+                        {showParticles && (
+                            <div className="absolute inset-0 pointer-events-none">
+                                {[...Array(8)].map((_, i) => (
+                                    <Particle key={i} color={categoryConfig.color} />
+                                ))}
+                            </div>
+                        )}
+                    </div>
                 )}
 
                 {/* Content Area */}
@@ -199,7 +237,7 @@ export const TaskItem = ({ task, onToggle, onDelete, onUpdate, index }) => {
                     )}
                 </div>
             )}
-        </div>
+        </motion.div>
     );
 };
 

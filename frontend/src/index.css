@@ -1,58 +1,116 @@
+@import url('https://fonts.googleapis.com/css2?family=Geist:wght@100..900&family=Outfit:wght@100..900&display=swap');
 @import "tailwindcss";
 
+:root {
+  --bg-dark: #030303;
+  --accent-emerald: #10b981;
+  --glass-border: rgba(255, 255, 255, 0.08);
+}
+
 body {
-  background-color: #000;
-  font-family: 'Inter', sans-serif;
+  background-color: var(--bg-dark);
+  font-family: 'Geist', 'Inter', sans-serif;
   overflow-x: hidden;
-  color: #e2e8f0;
+  color: #f1f5f9;
 }
 
-/* Custom Scrollbar */
+/* Custom Scrollbar - More minimal */
 ::-webkit-scrollbar {
-  width: 6px;
+  width: 4px;
 }
+
 ::-webkit-scrollbar-track {
-  background: #001d11;
+  background: transparent;
 }
+
 ::-webkit-scrollbar-thumb {
-  background: #00322e;
-  border-radius: 3px;
+  background: rgba(16, 185, 129, 0.2);
+  border-radius: 10px;
 }
+
 ::-webkit-scrollbar-thumb:hover {
-  background: #014d3a;
+  background: rgba(16, 185, 129, 0.4);
 }
 
+/* Enhanced Glassmorphism with Hierarchy */
 .glass-panel {
-  background: rgba(1, 49, 16, 0.15); /* #013110 with opacity */
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--glass-border);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
 }
 
-/* Pioneer-like gradient hover effect */
-.pioneer-hover {
-  position: relative;
-  overflow: hidden;
-  transition: all 0.3s ease;
+.glass-panel-heavy {
+  background: rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
 }
-.pioneer-hover::before {
+
+/* Animated Gradient Logo */
+.text-gradient-animate {
+  background: linear-gradient(to right,
+      #bbf7d0,
+      #10b981,
+      #064e3b,
+      #bbf7d0);
+  background-size: 300% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  animation: shine 8s linear infinite;
+}
+
+@keyframes shine {
+  to {
+    background-position: 300% center;
+  }
+}
+
+/* Glow Border for near deadline tasks */
+.glow-border-emerald {
+  position: relative;
+}
+
+.glow-border-emerald::after {
   content: '';
   position: absolute;
-  top: 0; left: 0; width: 100%; height: 100%;
-  background-image: linear-gradient(45deg, #00322e 0%, transparent 40%, transparent 60%, #013110);
-  opacity: 0;
-  transition: opacity 0.3s ease;
+  inset: -1px;
+  background: linear-gradient(45deg, transparent, rgba(16, 185, 129, 0.3), transparent);
+  background-size: 200% 200%;
+  animation: border-glow 4s linear infinite;
+  border-radius: inherit;
   z-index: -1;
+  pointer-events: none;
 }
-.pioneer-hover:hover::before {
-  opacity: 1;
+
+@keyframes border-glow {
+  0% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
+
+  100% {
+    background-position: 0% 50%;
+  }
 }
 
 @keyframes float {
-  0% { transform: translateY(0px); }
-  50% { transform: translateY(-10px); }
-  100% { transform: translateY(0px); }
+  0% {
+    transform: translateY(0px);
+  }
+
+  50% {
+    transform: translateY(-10px);
+  }
+
+  100% {
+    transform: translateY(0px);
+  }
 }
 
 .animate-float-slow {
@@ -62,4 +120,21 @@ body {
 input[type="datetime-local"]::-webkit-calendar-picker-indicator {
   filter: invert(1) opacity(0.5);
   cursor: pointer;
+}
+
+/* Skeleton loader animation */
+@keyframes skeleton-shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.skeleton-box {
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.03) 25%, rgba(255, 255, 255, 0.08) 50%, rgba(255, 255, 255, 0.03) 75%);
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 2s infinite linear;
 }

@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Background } from './components/Background';
 import { TaskInput } from './components/TaskInput';
 import { TaskItem } from './components/TaskItem';
 import { CalendarView } from './components/CalendarView';
+import { CommandPalette } from './components/CommandPalette';
 import { LayoutList, CalendarDays, CalendarRange, CheckCircle2, Circle, ListFilter } from 'lucide-react';
 import { getTareas, createTarea, updateTarea, deleteTarea, transformarTareaDelBackend } from './api/api';
 
@@ -12,10 +13,21 @@ const App = () => {
     const [viewMode, setViewMode] = useState('list');
     const [mounted, setMounted] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
+    const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
 
     useEffect(() => {
         setMounted(true);
         fetchTasks();
+
+        const handleKeyDown = (e) => {
+            if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+                e.preventDefault();
+                setIsCommandPaletteOpen(prev => !prev);
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
     }, []);
 
     const fetchTasks = async () => {
@@ -126,14 +138,14 @@ const App = () => {
                 {/* Header */}
                 <header className={`mb-8 transition-all duration-1000 ease-out transform ${mounted ? 'translate-y-0 opacity-100' : '-translate-y-10 opacity-0'}`}>
                     <div className="flex flex-col md:flex-row md:items-end justify-between mb-4 gap-4">
-                        <div>
-                            <h1 className="text-6xl font-serif italic font-bold text-transparent bg-clip-text bg-gradient-to-r from-emerald-100 via-emerald-50 to-emerald-900 tracking-tighter drop-shadow-lg">
+                        <div className="group cursor-default">
+                            <h1 className="text-7xl font-sans font-black tracking-tighter text-gradient-animate leading-none">
                                 tilde.
                             </h1>
-                            <div className="h-1 w-20 bg-emerald-500/50 mt-2 rounded-full shadow-[0_0_10px_rgba(16,185,129,0.5)]"></div>
+                            <div className="h-1.5 w-12 bg-emerald-500/50 mt-4 rounded-full shadow-[0_0_20px_rgba(16,185,129,0.8)] group-hover:w-24 transition-all duration-500"></div>
                         </div>
 
-                        <div className="flex gap-2 bg-black/40 p-1.5 rounded-lg border border-white/5 backdrop-blur-sm">
+                        <div className="flex gap-2 bg-white/5 p-1.5 rounded-2xl border border-white/5 backdrop-blur-xl">
                             <ViewModeButton active={viewMode === 'list'} onClick={() => setViewMode('list')} icon={<LayoutList size={14} />} label="List" />
                             <ViewModeButton active={viewMode === 'week'} onClick={() => setViewMode('week')} icon={<CalendarDays size={14} />} label="Week" />
                             <ViewModeButton active={viewMode === 'month'} onClick={() => setViewMode('month')} icon={<CalendarRange size={14} />} label="Month" />
@@ -156,27 +168,29 @@ const App = () => {
                             <FilterButton active={filter === 'completed'} onClick={() => setFilter('completed')} icon={<CheckCircle2 size={14} />} label="Completed" />
                         </div>
 
-                        <div className="flex-grow space-y-1 pb-20">
+                        <div className="flex-grow space-y-3 pb-20">
                             {isLoading ? (
-                                <div className="flex flex-col items-center justify-center py-20 animate-pulse">
-                                    <div className="relative w-16 h-16 mb-6">
-                                        <div className="absolute inset-0 border-2 border-emerald-500/20 rounded-full"></div>
-                                        <div className="absolute inset-0 border-t-2 border-emerald-400 rounded-full animate-spin"></div>
+                                <div className="space-y-3">
+                                    {[1, 2, 3, 4, 5].map((i) => (
+                                        <div key={i} className="h-16 w-full rounded-2xl glass-panel skeleton-box border-transparent shadow-none" />
+                                    ))}
+                                    <div className="flex flex-col items-center justify-center py-10">
+                                        <p className="text-emerald-400 font-mono text-[10px] uppercase tracking-[0.3em] animate-pulse">Sincronizando Sistema</p>
                                     </div>
-                                    <p className="text-emerald-100 font-mono text-[10px] uppercase tracking-[0.2em] mb-2">Despertando servidor</p>
-                                    <p className="text-gray-500 font-light text-xs italic">Sincronizando señales con la base de datos...</p>
                                 </div>
                             ) : filteredTasks.length > 0 ? (
-                                filteredTasks.map((task, index) => (
-                                    <TaskItem
-                                        key={task.id}
-                                        task={task}
-                                        onToggle={toggleTask}
-                                        onDelete={deleteTask}
-                                        onUpdate={updateTaskContent}
-                                        index={index}
-                                    />
-                                ))
+                                <AnimatePresence mode="popLayout">
+                                    {filteredTasks.map((task, index) => (
+                                        <TaskItem
+                                            key={task.id}
+                                            task={task}
+                                            onToggle={toggleTask}
+                                            onDelete={deleteTask}
+                                            onUpdate={updateTaskContent}
+                                            index={index}
+                                        />
+                                    ))}
+                                </AnimatePresence>
                             ) : (
                                 <div className="text-center py-20 border border-dashed border-white/10 rounded-xl bg-white/5">
                                     <span className="text-gray-500 font-light italic">No signals detected.</span>
@@ -203,35 +217,58 @@ const App = () => {
                     System.Override.Initiated
                 </footer>
 
+                <CommandPalette
+                    isOpen={isCommandPaletteOpen}
+                    onClose={() => setIsCommandPaletteOpen(false)}
+                    tasks={tasks}
+                    onSelectTask={(id) => {
+                        // For now we just stay in list view or highlight it
+                        setViewMode('list');
+                        // Potential scroll to task
+                    }}
+                />
             </main>
         </div>
     );
 };
 
 const ViewModeButton = ({ active, onClick, icon, label }) => (
-    <button
+    <motion.button
+        whileHover={{ y: -2 }}
+        whileTap={{ scale: 0.95 }}
         onClick={onClick}
-        className={`flex items-center gap-2 px-3 py-1.5 rounded text-xs transition-all duration-300 pioneer-hover ${active
-            ? 'bg-[#00322e] text-emerald-100 border border-emerald-500/20 shadow-[0_0_15px_rgba(1,49,16,0.5)]'
+        className={`relative flex items-center gap-2 px-4 py-2 rounded-xl text-xs transition-all duration-500 overflow-hidden ${active
+            ? 'text-emerald-400 font-bold'
             : 'text-gray-500 hover:text-emerald-300'
             }`}
     >
-        {icon}
-        <span className="hidden sm:inline">{label}</span>
-    </button>
+        {active && (
+            <motion.div
+                layoutId="activeTabMode"
+                className="absolute inset-0 bg-emerald-500/10 border border-emerald-500/20 rounded-xl"
+                transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+            />
+        )}
+        <span className="relative z-10 flex items-center gap-2">
+            {icon}
+            <span className="hidden sm:inline uppercase tracking-widest text-[10px]">{label}</span>
+        </span>
+    </motion.button>
 );
 
 const FilterButton = ({ active, onClick, icon, label }) => (
-    <button
+    <motion.button
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
         onClick={onClick}
-        className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs transition-all duration-300 border whitespace-nowrap ${active
-            ? 'bg-white/10 border-white/20 text-white'
-            : 'border-transparent text-gray-500 hover:text-gray-300 hover:bg-white/5'
+        className={`flex items-center gap-2 px-4 py-2 rounded-full text-[10px] uppercase tracking-wider transition-all duration-300 border whitespace-nowrap ${active
+            ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.1)]'
+            : 'border-white/5 text-gray-500 hover:text-gray-300 hover:bg-white/5'
             }`}
     >
         {icon}
         <span>{label}</span>
-    </button>
+    </motion.button>
 );
 
 export default App;

@@ -1,15 +1,28 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Command, X, CheckCircle2, Circle, Calendar, Clock, CornerDownLeft, ArrowUp, ArrowDown } from 'lucide-react';
+import { Search, Command, X, CheckCircle2, Circle, Calendar, Clock, CornerDownLeft, ArrowUp, ArrowDown, LayoutList, CalendarRange, CalendarDays, Plus } from 'lucide-react';
 
-export const CommandPalette = ({ isOpen, onClose, tasks, onSelectTask }) => {
+export const CommandPalette = ({ isOpen, onClose, tasks, onSelectTask, onAction }) => {
     const [query, setQuery] = useState('');
     const [selectedIndex, setSelectedIndex] = useState(0);
     const inputRef = useRef(null);
 
-    const filteredTasks = tasks.filter(task =>
-        task.text.toLowerCase().includes(query.toLowerCase())
-    ).slice(0, 8);
+    const ACTIONS = [
+        { id: 'act-new', text: 'Nueva Tarea', type: 'command', value: 'new', category: 'Sistema', icon: <Plus size={14} className="text-emerald-400" /> },
+        { id: 'act-list', text: 'Ver Vista Lista', type: 'view', value: 'list', category: 'Vista', icon: <LayoutList size={14} className="text-cyan-400" /> },
+        { id: 'act-week', text: 'Ver Vista Semana', type: 'view', value: 'week', category: 'Vista', icon: <CalendarRange size={14} className="text-cyan-400" /> },
+        { id: 'act-month', text: 'Ver Vista Mes', type: 'view', value: 'month', category: 'Vista', icon: <CalendarDays size={14} className="text-cyan-400" /> },
+    ];
+
+    const filteredItems = useMemo(() => {
+        const q = query.toLowerCase();
+        const matchedActions = ACTIONS.filter(a => a.text.toLowerCase().includes(q));
+        const matchedTasks = tasks.filter(t => t.text.toLowerCase().includes(q))
+            .slice(0, 6)
+            .map(t => ({ ...t, type: 'task' }));
+
+        return [...matchedActions, ...matchedTasks];
+    }, [query, tasks]);
 
     useEffect(() => {
         if (isOpen) {
@@ -23,12 +36,17 @@ export const CommandPalette = ({ isOpen, onClose, tasks, onSelectTask }) => {
         const handleKeyDown = (e) => {
             if (e.key === 'ArrowDown') {
                 e.preventDefault();
-                setSelectedIndex(prev => (prev < filteredTasks.length - 1 ? prev + 1 : prev));
+                setSelectedIndex(prev => (prev < filteredItems.length - 1 ? prev + 1 : prev));
             } else if (e.key === 'ArrowUp') {
                 e.preventDefault();
                 setSelectedIndex(prev => (prev > 0 ? prev - 1 : prev));
-            } else if (e.key === 'Enter' && filteredTasks[selectedIndex]) {
-                onSelectTask(filteredTasks[selectedIndex].id);
+            } else if (e.key === 'Enter' && filteredItems[selectedIndex]) {
+                const item = filteredItems[selectedIndex];
+                if (item.type === 'task') {
+                    onSelectTask(item.id);
+                } else {
+                    onAction(item);
+                }
                 onClose();
             } else if (e.key === 'Escape') {
                 onClose();
@@ -39,7 +57,7 @@ export const CommandPalette = ({ isOpen, onClose, tasks, onSelectTask }) => {
             window.addEventListener('keydown', handleKeyDown);
         }
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [isOpen, filteredTasks, selectedIndex, onSelectTask, onClose]);
+    }, [isOpen, filteredItems, selectedIndex, onSelectTask, onAction, onClose]);
 
     return (
         <AnimatePresence>
@@ -61,13 +79,15 @@ export const CommandPalette = ({ isOpen, onClose, tasks, onSelectTask }) => {
                         className="w-full max-w-2xl glass-panel-heavy rounded-[2rem] shadow-[0_32px_64px_-16px_rgba(0,0,0,0.6)] overflow-hidden border-white/10 relative z-10"
                     >
                         <div className="flex items-center p-6 border-b border-white/10">
-                            <Search size={22} className="text-emerald-500 mr-4" />
+                            <div className="p-2 bg-emerald-500/10 rounded-xl mr-4">
+                                <Command size={20} className="text-emerald-500" />
+                            </div>
                             <input
                                 ref={inputRef}
                                 type="text"
                                 value={query}
                                 onChange={(e) => setQuery(e.target.value)}
-                                placeholder="Buscar tareas o comandos..."
+                                placeholder="Buscar tareas o comandos (ej: 'Nueva', 'Mes')..."
                                 className="flex-grow bg-transparent border-none outline-none text-white text-xl placeholder-gray-600 font-light"
                             />
                             <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-white/5 rounded-xl border border-white/10 text-[10px] text-gray-400 font-mono shadow-inner">
@@ -76,14 +96,15 @@ export const CommandPalette = ({ isOpen, onClose, tasks, onSelectTask }) => {
                         </div>
 
                         <div className="max-h-[50vh] overflow-y-auto p-3 custom-scrollbar">
-                            {filteredTasks.length > 0 ? (
+                            {filteredItems.length > 0 ? (
                                 <div className="space-y-1">
-                                    {filteredTasks.map((task, index) => (
+                                    {filteredItems.map((item, index) => (
                                         <motion.div
-                                            key={task.id}
+                                            key={item.id}
                                             layout
                                             onClick={() => {
-                                                onSelectTask(task.id);
+                                                if (item.type === 'task') onSelectTask(item.id);
+                                                else onAction(item);
                                                 onClose();
                                             }}
                                             onMouseEnter={() => setSelectedIndex(index)}
@@ -99,19 +120,33 @@ export const CommandPalette = ({ isOpen, onClose, tasks, onSelectTask }) => {
                                             )}
 
                                             <div className="flex items-center gap-4 min-w-0 relative z-10">
-                                                <div className={`w-2 h-2 rounded-full ${task.completed ? 'bg-gray-600' : 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.5)]'}`} />
+                                                {item.type === 'task' ? (
+                                                    <div className={`w-2 h-2 rounded-full ${item.completed ? 'bg-gray-600' : 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.5)]'}`} />
+                                                ) : (
+                                                    <div className="p-2 bg-white/5 rounded-lg">
+                                                        {item.icon}
+                                                    </div>
+                                                )}
                                                 <div className="min-w-0">
-                                                    <p className={`text-base font-medium truncate tracking-tight ${task.completed ? 'text-gray-500 line-through' : 'text-gray-100'}`}>
-                                                        {task.text}
+                                                    <p className={`text-base font-medium truncate tracking-tight ${item.completed ? 'text-gray-500 line-through' : 'text-gray-100'}`}>
+                                                        {item.text}
                                                     </p>
                                                     <div className="flex items-center gap-4 mt-1">
-                                                        <span className="flex items-center gap-1.5 text-[10px] text-gray-500 font-mono">
-                                                            <Calendar size={12} className="text-gray-600" />
-                                                            {new Date(task.dueDate).toLocaleDateString()}
-                                                        </span>
-                                                        <span className="px-2 py-0.5 bg-emerald-500/10 rounded-full text-[9px] text-emerald-500 font-bold uppercase tracking-widest border border-emerald-500/10">
-                                                            {task.category || 'personal'}
-                                                        </span>
+                                                        {item.type === 'task' ? (
+                                                            <>
+                                                                <span className="flex items-center gap-1.5 text-[10px] text-gray-400 font-mono">
+                                                                    <Calendar size={12} className="text-gray-600" />
+                                                                    {new Date(item.dueDate).toLocaleDateString()}
+                                                                </span>
+                                                                <span className="px-2 py-0.5 bg-emerald-500/10 rounded-full text-[9px] text-emerald-500 font-bold uppercase tracking-widest border border-emerald-500/10">
+                                                                    {item.category || 'personal'}
+                                                                </span>
+                                                            </>
+                                                        ) : (
+                                                            <span className="text-[10px] text-emerald-500/60 font-mono uppercase tracking-[0.2em]">
+                                                                Comando de Sistema • {item.category}
+                                                            </span>
+                                                        )}
                                                     </div>
                                                 </div>
                                             </div>
@@ -123,7 +158,7 @@ export const CommandPalette = ({ isOpen, onClose, tasks, onSelectTask }) => {
                                                     className="relative z-10 flex items-center gap-2 px-3 py-1 bg-emerald-500/20 rounded-xl text-[10px] text-emerald-400 font-bold border border-emerald-500/20"
                                                 >
                                                     <CornerDownLeft size={10} />
-                                                    SELECCIONAR
+                                                    {item.type === 'task' ? 'ABRIR' : 'EJECUTAR'}
                                                 </motion.div>
                                             )}
                                         </motion.div>
@@ -133,7 +168,7 @@ export const CommandPalette = ({ isOpen, onClose, tasks, onSelectTask }) => {
                                 <div className="py-16 text-center">
                                     <Command className="mx-auto mb-4 text-gray-700" size={40} />
                                     <p className="text-gray-500 italic text-sm font-light">
-                                        No se detectaron señales operativas.
+                                        No se detectaron señales operativas para "{query}".
                                     </p>
                                 </div>
                             )}
@@ -144,7 +179,7 @@ export const CommandPalette = ({ isOpen, onClose, tasks, onSelectTask }) => {
                                 <span className="flex items-center gap-2"><ArrowUp size={10} /><ArrowDown size={10} /> NAVEGAR</span>
                                 <span className="flex items-center gap-2"><CornerDownLeft size={10} /> EJECUTAR</span>
                             </div>
-                            <span className="text-emerald-900/40">Command Engine v2.0.4</span>
+                            <span className="text-emerald-900/40">Command Engine v2.1.0</span>
                         </div>
                     </motion.div>
                 </div>

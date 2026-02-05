@@ -14,8 +14,8 @@ def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
     
-    # Configurar CORS de la forma más general posible
-    CORS(app)
+    # Configurar CORS de forma explícita para evitar problemas con preflight (OPTIONS)
+    CORS(app, resources={r"/api/*": {"origins": "*"}}, methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], allow_headers=['Content-Type', 'Authorization'])
 
     # Para evitar redirecciones 308, configurar strict_slashes=False
     app.url_map.strict_slashes = False

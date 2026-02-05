@@ -15,6 +15,20 @@ const App = () => {
     const [mounted, setMounted] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
     const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
+    const [focusedTaskId, setFocusedTaskId] = useState(null);
+    const [toasts, setToasts] = useState([]);
+
+    const showToast = (message, type = 'success') => {
+        const id = Date.now();
+        setToasts(prev => [...prev, { id, message, type }]);
+        setTimeout(() => {
+            setToasts(prev => prev.filter(t => t.id !== id));
+        }, 3000);
+    };
+
+    const toggleFocus = (id) => {
+        setFocusedTaskId(prev => prev === id ? null : id);
+    };
 
     useEffect(() => {
         setMounted(true);
@@ -60,7 +74,6 @@ const App = () => {
 
     const addTask = async (text, category, dueDate, notes = '') => {
         try {
-            // Create payload for backend
             const newTaskPayload = {
                 title: text,
                 description: notes,
@@ -69,9 +82,10 @@ const App = () => {
             };
 
             await createTarea(newTaskPayload);
-            await fetchTasks(); // Refresh list to get ID from backend
+            await fetchTasks();
+            showToast('Tarea desplegada con éxito');
         } catch (error) {
-            console.error("Error adding task", error);
+            showToast('Error en la secuencia de guardado', 'error');
         }
     };
 
@@ -80,21 +94,18 @@ const App = () => {
         if (!task) return;
 
         try {
-            // Toggle locally first for responsiveness (though we refresh after)
             const updatedStatus = !task.completed;
-
             await updateTarea(id, {
                 title: task.text,
                 description: task.notes,
                 date: new Date(task.dueDate).toISOString(),
                 completed: updatedStatus
             });
-
-            // Optimistic update
             setTasks(tasks.map(t => t.id === id ? { ...t, completed: updatedStatus } : t));
+            showToast(updatedStatus ? 'Misión cumplida' : 'Tarea reactivada');
         } catch (error) {
-            console.error("Error toggling task", error);
-            fetchTasks(); // Revert on error
+            showToast('Error en la sincronización', 'error');
+            fetchTasks();
         }
     };
 
@@ -102,8 +113,9 @@ const App = () => {
         try {
             await deleteTarea(id);
             setTasks(tasks.filter(t => t.id !== id));
+            showToast('Tarea eliminada del sistema');
         } catch (error) {
-            console.error("Error deleting task", error);
+            showToast('No se pudo purgar la tarea', 'error');
         }
     };
 
@@ -115,10 +127,10 @@ const App = () => {
                 date: new Date(updatedTask.dueDate).toISOString(),
                 completed: updatedTask.completed
             });
-            // Update local state
             setTasks(tasks.map(t => t.id === updatedTask.id ? updatedTask : t));
+            showToast('Registros actualizados');
         } catch (error) {
-            console.error("Error updating task", error);
+            showToast('Error al actualizar datos', 'error');
         }
     };
 
@@ -137,7 +149,7 @@ const App = () => {
             <main className="relative z-10 max-w-full mx-auto px-4 md:px-12 py-8 md:py-16 flex flex-col min-h-screen">
 
                 {/* Header */}
-                <header className={`mb-8 transition-all duration-1000 ease-out transform ${mounted ? 'translate-y-0 opacity-100' : '-translate-y-10 opacity-0'}`}>
+                <header className={`mb-8 transition-all duration-1000 ease-out transform ${mounted ? 'translate-y-0 opacity-100' : '-translate-y-10 opacity-0'} ${focusedTaskId ? 'blur-md pointer-events-none opacity-20' : ''}`}>
                     <div className="flex flex-col md:flex-row md:items-end justify-between mb-4 gap-4">
                         <div className="group cursor-default">
                             <h1 className="text-7xl font-sans font-black tracking-tighter text-gradient-animate leading-none">
@@ -155,13 +167,15 @@ const App = () => {
                 </header>
 
                 {/* Input */}
-                <div className={`transition-all duration-1000 delay-100 ease-out transform ${mounted ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'}`}>
+                <div className={`transition-all duration-1000 delay-100 ease-out transform ${mounted ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'} ${focusedTaskId ? 'blur-md pointer-events-none opacity-20' : ''}`}>
                     <TaskInput onAdd={addTask} />
                 </div>
 
                 {/* View Content */}
                 {viewMode === 'list' ? (
                     <>
+                        <ProductivityStats tasks={tasks} />
+
                         {/* List Filters */}
                         <div className={`flex items-center gap-4 mb-4 overflow-x-auto pb-2 transition-all duration-1000 delay-200 ease-out ${mounted ? 'opacity-100' : 'opacity-0'}`}>
                             <FilterButton active={filter === 'all'} onClick={() => setFilter('all')} icon={<ListFilter size={14} />} label="All Tasks" />
@@ -185,22 +199,47 @@ const App = () => {
                                         <TaskItem
                                             key={task.id}
                                             task={task}
+                                            index={index}
                                             onToggle={toggleTask}
                                             onDelete={deleteTask}
                                             onUpdate={updateTaskContent}
-                                            index={index}
+                                            isFocused={focusedTaskId === task.id}
+                                            isAnyFocused={focusedTaskId !== null}
+                                            onFocus={() => toggleFocus(task.id)}
                                         />
                                     ))}
                                 </AnimatePresence>
                             ) : (
-                                <div className="text-center py-20 border border-dashed border-white/10 rounded-xl bg-white/5">
-                                    <span className="text-gray-500 font-light italic">No signals detected.</span>
-                                </div>
+                                <motion.div
+                                    initial={{ opacity: 0, scale: 0.9 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    className="flex flex-col items-center justify-center py-24 border border-dashed border-white/5 rounded-[2.5rem] bg-white/[0.01] group hover:bg-white/[0.02] transition-colors duration-700"
+                                >
+                                    <div className="relative mb-6">
+                                        <div className="absolute inset-0 bg-emerald-500/20 blur-3xl rounded-full group-hover:bg-emerald-500/30 transition-all duration-700"></div>
+                                        <div className="relative w-20 h-20 rounded-3xl bg-black/40 border border-white/10 flex items-center justify-center shadow-2xl overflow-hidden">
+                                            <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/10 to-transparent"></div>
+                                            <CheckCircle2 size={32} className="text-emerald-500/40 group-hover:text-emerald-400 group-hover:scale-110 transition-all duration-700" />
+                                        </div>
+                                    </div>
+                                    <h3 className="text-emerald-100/60 font-medium tracking-tight text-lg">Silencio Operativo</h3>
+                                    <p className="text-gray-500 text-sm mt-1 font-light italic">No hay señales detectadas en el cuadrante actual.</p>
+                                    <button
+                                        onClick={() => window.document.getElementById('task-input-field')?.focus()}
+                                        className="mt-8 px-6 py-2 rounded-full border border-emerald-500/20 text-emerald-400 text-[10px] uppercase tracking-[0.2em] hover:bg-emerald-500/10 transition-all duration-300"
+                                    >
+                                        Iniciar Secuencia
+                                    </button>
+                                </motion.div>
                             )}
                         </div>
                     </>
                 ) : (
-                    <div className="flex-grow pb-20 animate-[fadeIn_0.5s_ease-out]">
+                    <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="flex-grow pb-20"
+                    >
                         <CalendarView
                             tasks={tasks}
                             mode={viewMode}
@@ -209,9 +248,13 @@ const App = () => {
                             onUpdate={updateTaskContent}
                             onTaskClick={(id) => {
                                 setViewMode('list');
+                                setTimeout(() => {
+                                    const element = document.querySelector(`[data-task-id="${id}"]`);
+                                    element?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                }, 100);
                             }}
                         />
-                    </div>
+                    </motion.div>
                 )}
 
                 <footer className="mt-auto pt-8 text-center text-[10px] text-emerald-900/40 font-mono uppercase tracking-widest">
@@ -222,13 +265,87 @@ const App = () => {
                     isOpen={isCommandPaletteOpen}
                     onClose={() => setIsCommandPaletteOpen(false)}
                     tasks={tasks}
+                    onAction={(action) => {
+                        if (action.type === 'view') {
+                            setViewMode(action.value);
+                        } else if (action.type === 'command') {
+                            if (action.value === 'new') {
+                                window.document.getElementById('task-input-field')?.focus();
+                                setViewMode('list');
+                            }
+                        }
+                    }}
                     onSelectTask={(id) => {
-                        // For now we just stay in list view or highlight it
                         setViewMode('list');
-                        // Potential scroll to task
+                        setTimeout(() => {
+                            const element = document.querySelector(`[data-task-id="${id}"]`);
+                            if (element) {
+                                element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                element.classList.add('ring-2', 'ring-emerald-500/50', 'bg-emerald-500/5');
+                                setTimeout(() => {
+                                    element.classList.remove('ring-2', 'ring-emerald-500/50', 'bg-emerald-500/5');
+                                }, 2000);
+                            }
+                        }, 100);
                     }}
                 />
+
+                <ToastContainer toasts={toasts} />
             </main>
+        </div>
+    );
+};
+
+const ToastContainer = ({ toasts }) => {
+    return (
+        <div className="fixed bottom-8 right-8 z-[200] flex flex-col gap-3">
+            <AnimatePresence>
+                {toasts.map((toast) => (
+                    <motion.div
+                        key={toast.id}
+                        initial={{ opacity: 0, x: 50, scale: 0.8 }}
+                        animate={{ opacity: 1, x: 0, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.5, transition: { duration: 0.2 } }}
+                        className={`px-6 py-3 rounded-2xl shadow-2xl backdrop-blur-xl border flex items-center gap-3 min-w-[240px] ${toast.type === 'error'
+                                ? 'bg-rose-500/10 border-rose-500/20 text-rose-200'
+                                : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-100'
+                            }`}
+                    >
+                        <div className={`w-2 h-2 rounded-full animate-pulse ${toast.type === 'error' ? 'bg-rose-500' : 'bg-emerald-500'}`} />
+                        <span className="text-xs font-medium uppercase tracking-[0.1em]">{toast.message}</span>
+                    </motion.div>
+                ))}
+            </AnimatePresence>
+        </div>
+    );
+};
+
+const ProductivityStats = ({ tasks }) => {
+    const total = tasks.length;
+    const completed = tasks.filter(t => t.completed).length;
+    const pending = total - completed;
+    const percent = total > 0 ? Math.round((completed / total) * 100) : 0;
+
+    return (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+            {[
+                { label: 'Total', value: total, color: 'text-emerald-100' },
+                { label: 'Completas', value: completed, color: 'text-emerald-400' },
+                { label: 'Pendientes', value: pending, color: 'text-rose-400' },
+                { label: 'Eficiencia', value: `${percent}%`, color: 'text-cyan-400' }
+            ].map((stat, i) => (
+                <motion.div
+                    key={stat.label}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.3 + (i * 0.1) }}
+                    className="glass-panel p-4 rounded-2xl border-white/5 relative overflow-hidden group"
+                >
+                    <div className="absolute inset-0 bg-gradient-to-br from-white/[0.02] to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                    <p className="text-[9px] uppercase tracking-[0.2em] text-gray-500 mb-1">{stat.label}</p>
+                    <p className={`text-2xl font-black tracking-tighter ${stat.color}`}>{stat.value}</p>
+                </motion.div>
+            ))}
         </div>
     );
 };

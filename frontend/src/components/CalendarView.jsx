@@ -258,45 +258,60 @@ const DraggableTask = ({
                     </div>
                 ) : (
                     <>
-                        <div className="flex items-start gap-1 justify-between">
-                            <div className="flex items-start gap-2 flex-grow min-w-0" {...listeners} {...attributes}>
+                        <div className="flex flex-col gap-2">
+                            {/* Titulo en la parte superior y medio */}
+                            <div
+                                className="w-full text-center px-1"
+                                {...listeners}
+                                {...attributes}
+                            >
+                                <div
+                                    className={`cursor-grab active:cursor-grabbing break-words leading-[1.4] py-1 min-w-0 font-medium tracking-tight inline-block mx-auto ${task.completed ? 'line-through text-gray-500 font-normal' : isOverdue ? 'text-rose-400 font-bold' : 'text-slate-100'}`}
+                                    onClick={() => onTaskClick(task.id)}
+                                >
+                                    {task.text}
+                                    {isOverdue && (
+                                        <div className="mt-1">
+                                            <span className="text-[8px] bg-rose-500/20 px-1.5 py-0.5 rounded-full uppercase tracking-widest text-rose-400 font-bold border border-rose-500/20">
+                                                vencida
+                                            </span>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Botones en la fila inferior */}
+                            <div className="flex items-center justify-center gap-1 flex-wrap pt-2 border-t border-white/5 opacity-0 group-hover:opacity-100 transition-all duration-300">
                                 <button
                                     onClick={(e) => { e.stopPropagation(); onToggle(task.id); }}
-                                    className={`mt-1 flex-shrink-0 transition-all duration-300 hover:scale-110 ${task.completed ? 'text-emerald-400' : 'text-gray-400 hover:text-emerald-400'}`}
+                                    className={`p-1.5 rounded-md transition-all duration-300 hover:scale-110 ${task.completed ? 'text-emerald-400' : 'text-gray-400 hover:text-emerald-400'}`}
+                                    title={task.completed ? "Reactivar" : "Completar"}
                                 >
                                     {task.completed ? <CheckSquare size={14} strokeWidth={2.5} /> : <Square size={14} strokeWidth={2} />}
                                 </button>
 
-                                <div
-                                    className={`flex-grow cursor-grab active:cursor-grabbing break-words leading-[1.4] py-0.5 min-w-0 font-medium tracking-tight ${task.completed ? 'line-through text-gray-500 font-normal' : isOverdue ? 'text-rose-400 font-bold' : 'text-slate-100'}`}
-                                    onClick={() => onTaskClick(task.id)}
-                                >
-                                    {task.text}
-                                    {isOverdue && <span className="ml-1.5 text-[9px] bg-rose-500/20 px-1.5 py-0.5 rounded-full uppercase tracking-widest text-rose-400 font-bold whitespace-nowrap border border-rose-500/20">vencida</span>}
-                                </div>
-                            </div>
-
-                            <div className="flex items-center gap-0.5 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-all duration-200 ml-2 mt-0.5 translate-x-1 group-hover:translate-x-0">
                                 <button
                                     onClick={() => setShowNotesTaskId(isShowingNotes ? null : task.id)}
                                     className={`p-1.5 rounded-md hover:bg-white/10 ${isShowingNotes ? 'text-emerald-400 bg-emerald-900/20' : 'text-gray-400 hover:text-emerald-300'}`}
                                     title="Notas"
                                 >
-                                    <Eye size={13} strokeWidth={2} />
+                                    <Eye size={14} strokeWidth={2} />
                                 </button>
+
                                 <button
                                     onClick={() => startEditing(task)}
                                     className="p-1.5 text-gray-400 hover:text-emerald-300 hover:bg-white/10 rounded-md transition-colors"
                                     title="Editar"
                                 >
-                                    <Pencil size={13} strokeWidth={2} />
+                                    <Pencil size={14} strokeWidth={2} />
                                 </button>
+
                                 <button
                                     onClick={() => onDelete(task.id)}
                                     className="p-1.5 text-gray-400 hover:text-rose-400 hover:bg-rose-900/20 rounded-md transition-colors"
                                     title="Eliminar"
                                 >
-                                    <X size={13} strokeWidth={2} />
+                                    <X size={14} strokeWidth={2} />
                                 </button>
                             </div>
                         </div>

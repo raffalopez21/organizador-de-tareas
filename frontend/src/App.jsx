@@ -74,10 +74,14 @@ const App = () => {
 
     const addTask = async (text, category, dueDate, notes = '') => {
         try {
+            const localDate = new Date(dueDate);
+            const offset = localDate.getTimezoneOffset() * 60000;
+            const localISOTime = new Date(localDate - offset).toISOString().slice(0, -1);
+
             const newTaskPayload = {
                 title: text,
                 description: notes,
-                date: new Date(dueDate).toISOString(),
+                date: localISOTime,
                 completed: false
             };
 
@@ -95,10 +99,14 @@ const App = () => {
 
         try {
             const updatedStatus = !task.completed;
+            const localDate = new Date(task.dueDate);
+            const offset = localDate.getTimezoneOffset() * 60000;
+            const localISOTime = new Date(localDate - offset).toISOString().slice(0, -1);
+
             await updateTarea(id, {
                 title: task.text,
                 description: task.notes,
-                date: new Date(task.dueDate).toISOString(),
+                date: localISOTime,
                 completed: updatedStatus
             });
             setTasks(tasks.map(t => t.id === id ? { ...t, completed: updatedStatus } : t));
@@ -121,10 +129,14 @@ const App = () => {
 
     const updateTaskContent = async (updatedTask) => {
         try {
+            const localDate = new Date(updatedTask.dueDate);
+            const offset = localDate.getTimezoneOffset() * 60000;
+            const localISOTime = new Date(localDate - offset).toISOString().slice(0, -1);
+
             await updateTarea(updatedTask.id, {
                 title: updatedTask.text,
                 description: updatedTask.notes,
-                date: new Date(updatedTask.dueDate).toISOString(),
+                date: localISOTime,
                 completed: updatedTask.completed
             });
             setTasks(tasks.map(t => t.id === updatedTask.id ? updatedTask : t));

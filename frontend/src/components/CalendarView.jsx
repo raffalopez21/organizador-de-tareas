@@ -92,7 +92,7 @@ export const CalendarView = ({ tasks, mode, onToggle, onDelete, onUpdate, onTask
 
     return (
         <DndContext onDragEnd={handleDragEnd}>
-            <div className="w-full h-full pb-10 overflow-x-auto">
+            <div className="w-full h-full pb-10">
                 {/* Calendar Controls */}
                 <div className="flex items-center justify-between mb-6 px-1">
                     <div className="flex items-center gap-4">
@@ -113,7 +113,7 @@ export const CalendarView = ({ tasks, mode, onToggle, onDelete, onUpdate, onTask
                     </div>
                 </div>
 
-                <div className={`grid gap-3 min-w-[1400px] ${mode === 'month' ? 'grid-cols-7 grid-flow-row auto-rows-min' : 'grid-cols-1 md:grid-cols-7'}`}>
+                <div className={`grid gap-3 w-full ${mode === 'month' ? 'grid-cols-7 grid-flow-row auto-rows-min' : 'grid-cols-1 md:grid-cols-7'}`}>
                     {/* Headers for Month View */}
                     {mode === 'month' && ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(day => (
                         <div key={day} className="text-center text-[10px] uppercase tracking-widest text-emerald-500/60 py-2">

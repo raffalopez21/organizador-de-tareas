@@ -39,10 +39,12 @@ export const CalendarView = ({ tasks, mode, onToggle, onDelete, onUpdate, onTask
     const goToToday = () => setCurrentReferenceDate(new Date());
 
     const getTasksForDay = (date) => {
-        return tasks.filter(task => {
-            if (!task.dueDate) return false;
-            return isSameDay(new Date(task.dueDate), date);
-        });
+        return tasks
+            .filter(task => {
+                if (!task.dueDate) return false;
+                return isSameDay(new Date(task.dueDate), date);
+            })
+            .sort((a, b) => a.dueDate - b.dueDate);
     };
 
     const startEditing = (task) => {
@@ -258,69 +260,69 @@ const DraggableTask = ({
                     </div>
                 ) : (
                     <>
-                        <div className="flex flex-col gap-2">
-                            {/* Titulo en la parte superior y medio */}
+                        <div className="flex flex-col gap-1.5">
+                            {/* Titulo y Hora en la parte superior */}
                             <div
                                 className="w-full text-center px-1"
                                 {...listeners}
                                 {...attributes}
                             >
                                 <div
-                                    className={`cursor-grab active:cursor-grabbing break-words leading-[1.4] py-1 min-w-0 font-medium tracking-tight inline-block mx-auto ${task.completed ? 'line-through text-gray-500 font-normal' : isOverdue ? 'text-rose-400 font-bold' : 'text-slate-100'}`}
+                                    className={`cursor-grab active:cursor-grabbing break-words leading-[1.3] pt-1 min-w-0 font-medium tracking-tight inline-block mx-auto ${task.completed ? 'line-through text-gray-500 font-normal' : isOverdue ? 'text-rose-400 font-bold' : 'text-slate-100'}`}
                                     onClick={() => onTaskClick(task.id)}
                                 >
                                     {task.text}
                                     {isOverdue && (
-                                        <div className="mt-1">
-                                            <span className="text-[8px] bg-rose-500/20 px-1.5 py-0.5 rounded-full uppercase tracking-widest text-rose-400 font-bold border border-rose-500/20">
+                                        <div className="mt-0.5">
+                                            <span className="text-[7px] bg-rose-500/20 px-1 py-0.2 rounded-full uppercase tracking-widest text-rose-400 font-bold border border-rose-500/20">
                                                 vencida
                                             </span>
                                         </div>
                                     )}
                                 </div>
+                                <div className="text-[10px] text-emerald-500/60 font-mono mt-0.5 pb-1">
+                                    {format(new Date(task.dueDate), "HH:mm")}
+                                </div>
                             </div>
 
-                            {/* Botones en la fila inferior */}
-                            <div className="flex items-center justify-center gap-1 flex-wrap pt-2 border-t border-white/5 opacity-0 group-hover:opacity-100 transition-all duration-300">
+                            {/* Botones en la fila inferior - fijos en una sola línea */}
+                            <div className="flex items-center justify-between gap-0.5 pt-2 border-t border-white/5 opacity-100">
                                 <button
                                     onClick={(e) => { e.stopPropagation(); onToggle(task.id); }}
-                                    className={`p-1.5 rounded-md transition-all duration-300 hover:scale-110 ${task.completed ? 'text-emerald-400' : 'text-gray-400 hover:text-emerald-400'}`}
+                                    className={`p-1 flex-shrink-0 transition-all duration-300 hover:scale-110 ${task.completed ? 'text-emerald-400' : 'text-gray-400 hover:text-emerald-400'}`}
                                     title={task.completed ? "Reactivar" : "Completar"}
                                 >
-                                    {task.completed ? <CheckSquare size={14} strokeWidth={2.5} /> : <Square size={14} strokeWidth={2} />}
+                                    {task.completed ? <CheckSquare size={13} strokeWidth={2.5} /> : <Square size={13} strokeWidth={2} />}
                                 </button>
 
                                 <button
                                     onClick={() => setShowNotesTaskId(isShowingNotes ? null : task.id)}
-                                    className={`p-1.5 rounded-md hover:bg-white/10 ${isShowingNotes ? 'text-emerald-400 bg-emerald-900/20' : 'text-gray-400 hover:text-emerald-300'}`}
+                                    className={`p-1 rounded-md hover:bg-white/10 ${isShowingNotes ? 'text-emerald-400 bg-emerald-900/20' : 'text-gray-400 hover:text-emerald-300'}`}
                                     title="Notas"
                                 >
-                                    <Eye size={14} strokeWidth={2} />
+                                    <Eye size={13} strokeWidth={2} />
                                 </button>
 
                                 <button
                                     onClick={() => startEditing(task)}
-                                    className="p-1.5 text-gray-400 hover:text-emerald-300 hover:bg-white/10 rounded-md transition-colors"
+                                    className="p-1 text-gray-400 hover:text-emerald-300 hover:bg-white/10 rounded-md transition-colors"
                                     title="Editar"
                                 >
-                                    <Pencil size={14} strokeWidth={2} />
+                                    <Pencil size={13} strokeWidth={2} />
                                 </button>
 
                                 <button
                                     onClick={() => onDelete(task.id)}
-                                    className="p-1.5 text-gray-400 hover:text-rose-400 hover:bg-rose-900/20 rounded-md transition-colors"
+                                    className="p-1 text-gray-400 hover:text-rose-400 hover:bg-rose-900/20 rounded-md transition-colors"
                                     title="Eliminar"
                                 >
-                                    <X size={14} strokeWidth={2} />
+                                    <X size={13} strokeWidth={2} />
                                 </button>
                             </div>
                         </div>
                         {isShowingNotes && (
-                            <div className="mt-2 p-2 bg-black/40 rounded-lg border border-white/5 text-[10px] text-gray-400 italic break-words flex items-center justify-between">
-                                <span>{task.notes || "Sin notas."}</span>
-                                <span className="text-emerald-500/80 font-mono ml-2 flex-shrink-0">
-                                    {format(new Date(task.dueDate), "HH:mm")}
-                                </span>
+                            <div className="mt-2 p-2 bg-black/40 rounded-lg border border-white/5 text-[10px] text-gray-400 italic break-words">
+                                {task.notes || "Sin notas."}
                             </div>
                         )}
                     </>

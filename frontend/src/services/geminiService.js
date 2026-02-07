@@ -1,8 +1,8 @@
-import { createGoogleGenAI } from "@google/genai";
+import { GoogleGenAI } from "@google/genai";
 
 // Using the newer unified @google/genai SDK
 const apiKey = import.meta.env.VITE_API_KEY || '';
-const client = apiKey ? createGoogleGenAI({ apiKey }) : null;
+const client = apiKey ? new GoogleGenAI({ apiKey }) : null;
 
 export const isAIReady = !!client;
 
@@ -19,13 +19,20 @@ export const breakdownTask = async (taskTitle) => {
         Do not include markdown formatting like \`\`\`json.`;
 
         // The unified SDK @google/genai uses client.models.generateContent
-        const result = await client.models.generateContent({
+        const response = await client.models.generateContent({
             model: "gemini-1.5-flash",
             contents: [{ parts: [{ text: prompt }] }]
         });
 
-        const response = result.response;
-        let text = response.text();
+        // In the unified SDK, the return is typically the response itself
+        let text = "";
+        if (typeof response.text === 'function') {
+            text = response.text();
+        } else if (typeof response.text === 'string') {
+            text = response.text;
+        } else if (response.candidates?.[0]?.content?.parts?.[0]?.text) {
+            text = response.candidates[0].content.parts[0].text;
+        }
 
         if (!text) throw new Error("No response from AI");
 

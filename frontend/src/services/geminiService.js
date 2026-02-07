@@ -1,30 +1,32 @@
-import { GoogleGenerativeAI } from "@google/genai";
+import { GoogleGenAI } from "@google/genai";
 
 // Note: In Vite, we use import.meta.env.VITE_API_KEY
 const apiKey = import.meta.env.VITE_API_KEY || '';
-const genAI = apiKey ? new GoogleGenerativeAI(apiKey) : null;
+const client = apiKey ? new GoogleGenAI({ apiKey }) : null;
 
 export const breakdownTask = async (taskTitle) => {
-    if (!genAI) {
+    if (!client) {
         console.warn("No API Key provided for Gemini");
         return { subtasks: [] };
     }
 
     try {
-        const model = genAI.getGenerativeModel({
-            model: "gemini-1.5-flash",
-            generationConfig: {
+        const response = await client.models.generateContent({
+            model: 'gemini-2.0-flash',
+            contents: [{
+                role: 'user',
+                parts: [{
+                    text: `Analyze this task: "${taskTitle}". 
+                    Break it down into 3-5 actionable sub-steps.
+                    Return as JSON with key: subtasks (string array).`
+                }]
+            }],
+            config: {
                 responseMimeType: "application/json",
             }
         });
 
-        const prompt = `Analyze this task: "${taskTitle}". 
-      1. Break it down into 3-5 actionable sub-steps.
-      Return as JSON with key: subtasks (string array).`;
-
-        const result = await model.generateContent(prompt);
-        const text = result.response.text();
-
+        const text = response.text;
         if (!text) throw new Error("No response from AI");
 
         const data = JSON.parse(text);

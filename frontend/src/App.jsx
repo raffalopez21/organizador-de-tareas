@@ -179,6 +179,7 @@ const App = () => {
                         task={task}
                         onToggle={handleToggleTask}
                         onDelete={handleDeleteTask}
+                        onEdit={handleEditTask}
                     />
                 ))
             )}

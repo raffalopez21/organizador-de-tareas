@@ -20,7 +20,7 @@ export const breakdownTask = async (taskTitle) => {
 
         // The unified SDK @google/genai uses client.models.generateContent
         const response = await client.models.generateContent({
-            model: "gemini-1.5-flash",
+            model: "gemini-2.0-flash",
             contents: [{ parts: [{ text: prompt }] }]
         });
 

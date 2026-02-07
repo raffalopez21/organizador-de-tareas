@@ -48,7 +48,6 @@ const TaskInput = ({ onSaveTask, taskToEdit, onCancelEdit }) => {
             setDate('');
             setHour('');
             setMinute('');
-            // Don't close options if user is typing
         }
     }, [taskToEdit]);
 
@@ -64,7 +63,7 @@ const TaskInput = ({ onSaveTask, taskToEdit, onCancelEdit }) => {
     }, []);
 
     const handleSubmit = async (e) => {
-        e.preventDefault();
+        if (e) e.preventDefault();
         if (!input.trim() || isProcessing) return;
 
         const rawTitle = input.trim();
@@ -103,13 +102,11 @@ const TaskInput = ({ onSaveTask, taskToEdit, onCancelEdit }) => {
             return;
         }
 
-        // New Task Flow - Use AI optionally
+        // Handle AI Logic inside handleSubmit so it saves the task
         if (useAI) {
             setIsProcessing(true);
             try {
                 const analysis = await breakdownTask(rawTitle);
-
-                // Append AI notes to existing notes if any
                 const aiNotes = analysis.subtasks && analysis.subtasks.length > 0
                     ? `\n\nDesglose IA:\n${analysis.subtasks.map(s => `- ${s}`).join('\n')}`
                     : '';
@@ -119,20 +116,13 @@ const TaskInput = ({ onSaveTask, taskToEdit, onCancelEdit }) => {
                     notes: (baseData.notes + aiNotes).trim(),
                     isCompleted: false,
                 });
-
             } catch (err) {
-                onSaveTask({
-                    ...baseData,
-                    isCompleted: false,
-                });
+                onSaveTask({ ...baseData, isCompleted: false });
             } finally {
                 setIsProcessing(false);
             }
         } else {
-            onSaveTask({
-                ...baseData,
-                isCompleted: false,
-            });
+            onSaveTask({ ...baseData, isCompleted: false });
         }
     };
 
@@ -187,16 +177,14 @@ const TaskInput = ({ onSaveTask, taskToEdit, onCancelEdit }) => {
                                 <CalendarIcon className="w-5 h-5" />
                             </button>
 
-                            {!taskToEdit && (
-                                <button
-                                    type="button"
-                                    onClick={() => setUseAI(!useAI)}
-                                    className={`p-2 rounded-lg transition-all duration-300 ${useAI ? 'text-neon-400 bg-neon-400/10' : 'text-slate-600 hover:text-slate-400'}`}
-                                    title="AI Analysis"
-                                >
-                                    <Sparkles className="w-5 h-5" />
-                                </button>
-                            )}
+                            <button
+                                type="submit"
+                                className={`p-2 rounded-lg transition-all duration-300 ${useAI ? 'text-neon-400 bg-neon-400/10' : 'text-slate-600 hover:text-slate-400'}`}
+                                title={useAI ? "Crear con análisis IA" : "Análisis IA desactivado"}
+                                onClick={() => !taskToEdit && setUseAI(!useAI)}
+                            >
+                                <Sparkles className="w-5 h-5" />
+                            </button>
 
                             <button
                                 type="submit"
@@ -238,9 +226,9 @@ const TaskInput = ({ onSaveTask, taskToEdit, onCancelEdit }) => {
                                                 onChange={(e) => setHour(e.target.value)}
                                                 className="w-full bg-dark-800 border border-dark-700 rounded-lg pl-3 pr-8 py-2 text-sm text-slate-200 focus:border-neon-500 outline-none appearance-none transition-colors cursor-pointer"
                                             >
-                                                <option value="">--</option>
+                                                <option value="" className="bg-dark-900 text-slate-200">--</option>
                                                 {HOURS.map(h => (
-                                                    <option key={h} value={h}>{h}</option>
+                                                    <option key={h} value={h} className="bg-dark-900 text-slate-200">{h}</option>
                                                 ))}
                                             </select>
                                             <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 pointer-events-none" />
@@ -252,9 +240,9 @@ const TaskInput = ({ onSaveTask, taskToEdit, onCancelEdit }) => {
                                                 onChange={(e) => setMinute(e.target.value)}
                                                 className="w-full bg-dark-800 border border-dark-700 rounded-lg pl-3 pr-8 py-2 text-sm text-slate-200 focus:border-neon-500 outline-none appearance-none transition-colors cursor-pointer"
                                             >
-                                                <option value="">--</option>
+                                                <option value="" className="bg-dark-900 text-slate-200">--</option>
                                                 {MINUTES.map(m => (
-                                                    <option key={m} value={m}>{m}</option>
+                                                    <option key={m} value={m} className="bg-dark-900 text-slate-200">{m}</option>
                                                 ))}
                                             </select>
                                             <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 pointer-events-none" />

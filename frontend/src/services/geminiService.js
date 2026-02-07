@@ -11,22 +11,20 @@ export const breakdownTask = async (taskTitle) => {
     }
 
     try {
-        const response = await client.models.generateContent({
-            model: 'gemini-2.0-flash',
-            contents: [{
-                role: 'user',
-                parts: [{
-                    text: `Analyze this task: "${taskTitle}". 
-                    Break it down into 3-5 actionable sub-steps.
-                    Return as JSON with key: subtasks (string array).`
-                }]
-            }],
-            config: {
-                responseMimeType: "application/json",
-            }
-        });
+        const model = client.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-        const text = response.text;
+        const prompt = `Analyze this task: "${taskTitle}". 
+        Break it down into 3-5 actionable sub-steps.
+        Return ONLY a JSON object with this format: {"subtasks": ["step 1", "step 2", ...]}
+        Do not include markdown formatting like \`\`\`json.`;
+
+        const result = await model.generateContent(prompt);
+        const response = await result.response;
+        let text = response.text();
+
+        // Clean potentially problematic markdown backticks if AI includes them
+        text = text.replace(/```json/g, "").replace(/```/g, "").trim();
+
         if (!text) throw new Error("No response from AI");
 
         const data = JSON.parse(text);

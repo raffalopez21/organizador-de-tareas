@@ -1,66 +1,47 @@
-import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Background } from './components/Background';
-import { TaskInput } from './components/TaskInput';
-import { TaskItem } from './components/TaskItem';
-import { CalendarView } from './components/CalendarView';
-import { CommandPalette } from './components/CommandPalette';
-import { LayoutList, CalendarDays, CalendarRange, CheckCircle2, Circle, ListFilter } from 'lucide-react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import TaskInput from './components/TaskInput';
+import TaskItem from './components/TaskItem';
+import MiniTaskCard from './components/MiniTaskCard';
+import { Layout, Zap, CalendarDays, List, Calendar as CalendarIcon, ChevronLeft, ChevronRight } from 'lucide-react';
 import { getTareas, createTarea, updateTarea, deleteTarea, transformarTareaDelBackend } from './api/api';
+
+// Helper for date manipulation
+const getStartOfWeek = (date) => {
+    const d = new Date(date);
+    const day = d.getDay();
+    const diff = d.getDate() - day + (day === 0 ? -6 : 1); // Adjust when day is sunday
+    return new Date(d.setDate(diff));
+};
+
+const getDaysInMonth = (year, month) => new Date(year, month + 1, 0).getDate();
 
 const App = () => {
     const [tasks, setTasks] = useState([]);
-    const [filter, setFilter] = useState('active');
-    const [viewMode, setViewMode] = useState('list');
-    const [mounted, setMounted] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
-    const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
-    const [focusedTaskId, setFocusedTaskId] = useState(null);
-    const [toasts, setToasts] = useState([]);
+    const [filter, setFilter] = useState({
+        search: '',
+        status: 'all',
+    });
 
-    const showToast = (message, type = 'success') => {
-        const id = Date.now();
-        setToasts(prev => [...prev, { id, message, type }]);
-        setTimeout(() => {
-            setToasts(prev => prev.filter(t => t.id !== id));
-        }, 3000);
-    };
+    const [view, setView] = useState('list');
+    const [currentDate, setCurrentDate] = useState(new Date());
 
-    const toggleFocus = (id) => {
-        setFocusedTaskId(prev => prev === id ? null : id);
-    };
-
-    useEffect(() => {
-        setMounted(true);
-        fetchTasks();
-
-        const handleKeyDown = (e) => {
-            if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-                e.preventDefault();
-                setIsCommandPaletteOpen(prev => !prev);
-            }
-        };
-
-        window.addEventListener('keydown', handleKeyDown);
-        return () => window.removeEventListener('keydown', handleKeyDown);
-    }, []);
+    // States for editing and selection
+    const [taskToEdit, setTaskToEdit] = useState(null);
+    const [selectedDate, setSelectedDate] = useState(new Date());
 
     const fetchTasks = async () => {
         setIsLoading(true);
         try {
             const backendTasks = await getTareas();
-            // Map backend tasks to UI format
             const mappedTasks = backendTasks.map(t => {
                 const transformed = transformarTareaDelBackend(t);
                 return {
                     id: transformed.id,
-                    text: transformed.title,
+                    title: transformed.title,
                     notes: transformed.description,
-                    completed: transformed.completed,
-                    // Parse date string to timestamp if possible, else now
-                    dueDate: transformed.date ? new Date(transformed.date).getTime() : Date.now(),
-                    // Try to infer category or default to personal
-                    category: 'personal', // Ideally we'd store this in the backend
+                    isCompleted: transformed.completed,
+                    dueDate: transformed.date ? new Date(transformed.date).getTime() : null,
                     createdAt: Date.now()
                 };
             });
@@ -72,333 +53,373 @@ const App = () => {
         }
     };
 
-    const addTask = async (text, category, dueDate, notes = '') => {
-        try {
-            const localDate = new Date(dueDate);
-            const offset = localDate.getTimezoneOffset() * 60000;
-            const localISOTime = new Date(localDate - offset).toISOString().slice(0, -1);
+    useEffect(() => {
+        fetchTasks();
+    }, []);
 
-            const newTaskPayload = {
-                title: text,
-                description: notes,
-                date: localISOTime,
-                completed: false
-            };
-
-            await createTarea(newTaskPayload);
-            await fetchTasks();
-            showToast('Tarea desplegada con éxito');
-        } catch (error) {
-            showToast('Error en la secuencia de guardado', 'error');
-        }
+    const formatToBackendDate = (timestamp) => {
+        if (!timestamp) return null;
+        const localDate = new Date(timestamp);
+        const offset = localDate.getTimezoneOffset() * 60000;
+        return new Date(localDate - offset).toISOString().slice(0, -1);
     };
 
-    const toggleTask = async (id) => {
+    // Handle Create or Update
+    const handleSaveTask = useCallback(async (taskData) => {
+        try {
+            if (taskData.id) {
+                // Edit existing
+                await updateTarea(taskData.id, {
+                    title: taskData.title,
+                    description: taskData.notes,
+                    date: formatToBackendDate(taskData.dueDate),
+                    completed: taskData.isCompleted
+                });
+                setTasks(prev => prev.map(t => t.id === taskData.id ? taskData : t));
+                setTaskToEdit(null);
+            } else {
+                // Create new
+                const newTaskPayload = {
+                    title: taskData.title,
+                    description: taskData.notes,
+                    date: formatToBackendDate(taskData.dueDate),
+                    completed: false
+                };
+                await createTarea(newTaskPayload);
+                await fetchTasks();
+            }
+        } catch (error) {
+            console.error("Error saving task:", error);
+        }
+    }, []);
+
+    const handleToggleTask = useCallback(async (id) => {
         const task = tasks.find(t => t.id === id);
         if (!task) return;
 
         try {
-            const updatedStatus = !task.completed;
-            const localDate = new Date(task.dueDate);
-            const offset = localDate.getTimezoneOffset() * 60000;
-            const localISOTime = new Date(localDate - offset).toISOString().slice(0, -1);
-
+            const updatedStatus = !task.isCompleted;
             await updateTarea(id, {
-                title: task.text,
+                title: task.title,
                 description: task.notes,
-                date: localISOTime,
+                date: formatToBackendDate(task.dueDate),
                 completed: updatedStatus
             });
-            setTasks(tasks.map(t => t.id === id ? { ...t, completed: updatedStatus } : t));
-            showToast(updatedStatus ? 'Misión cumplida' : 'Tarea reactivada');
+            setTasks(prev => prev.map(t =>
+                t.id === id ? { ...t, isCompleted: updatedStatus } : t
+            ));
         } catch (error) {
-            showToast('Error en la sincronización', 'error');
-            fetchTasks();
+            console.error("Error toggling task:", error);
         }
-    };
+    }, [tasks]);
 
-    const deleteTask = async (id) => {
+    const handleDeleteTask = useCallback(async (id) => {
         try {
             await deleteTarea(id);
-            setTasks(tasks.filter(t => t.id !== id));
-            showToast('Tarea eliminada del sistema');
+            setTasks(prev => prev.filter(t => t.id !== id));
+            if (taskToEdit?.id === id) setTaskToEdit(null);
         } catch (error) {
-            showToast('No se pudo purgar la tarea', 'error');
+            console.error("Error deleting task:", error);
+        }
+    }, [taskToEdit]);
+
+    const handleEditTask = useCallback((task) => {
+        setTaskToEdit(task);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }, []);
+
+    const clearCompleted = async () => {
+        const completedTasks = tasks.filter(t => t.isCompleted);
+        for (const task of completedTasks) {
+            await handleDeleteTask(task.id);
         }
     };
 
-    const updateTaskContent = async (updatedTask) => {
-        try {
-            const localDate = new Date(updatedTask.dueDate);
-            const offset = localDate.getTimezoneOffset() * 60000;
-            const localISOTime = new Date(localDate - offset).toISOString().slice(0, -1);
+    // Filtering Logic
+    const filteredTasks = useMemo(() => {
+        return tasks.filter(t => {
+            const matchesSearch = t.title.toLowerCase().includes(filter.search.toLowerCase());
+            const matchesStatus = filter.status === 'all'
+                ? true
+                : filter.status === 'completed' ? t.isCompleted : !t.isCompleted;
 
-            await updateTarea(updatedTask.id, {
-                title: updatedTask.text,
-                description: updatedTask.notes,
-                date: localISOTime,
-                completed: updatedTask.completed
-            });
-            setTasks(tasks.map(t => t.id === updatedTask.id ? updatedTask : t));
-            showToast('Registros actualizados');
-        } catch (error) {
-            showToast('Error al actualizar datos', 'error');
-        }
+            return matchesSearch && matchesStatus;
+        });
+    }, [tasks, filter]);
+
+    // Sorting
+    const sortedTasks = useMemo(() => {
+        return [...filteredTasks].sort((a, b) => {
+            if (!a.dueDate) return 1;
+            if (!b.dueDate) return -1;
+            return a.dueDate - b.dueDate;
+        });
+    }, [filteredTasks]);
+
+    // --- Views Rendering ---
+
+    const renderListView = () => (
+        <div className="space-y-1 pb-20 animate-fade-in">
+            {isLoading ? (
+                <div className="text-center py-20 opacity-50">
+                    <Loader2 className="w-8 h-8 text-neon-400 animate-spin mx-auto mb-4" />
+                    <p className="text-slate-500 text-sm">Cargando tareas...</p>
+                </div>
+            ) : sortedTasks.length === 0 ? (
+                <div className="text-center py-20 opacity-50">
+                    <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-dark-800 mb-4 border border-dark-700">
+                        <Layout className="w-6 h-6 text-slate-600" />
+                    </div>
+                    <p className="text-slate-500 text-sm">Nada por aquí aún.</p>
+                </div>
+            ) : (
+                sortedTasks.map(task => (
+                    <TaskItem
+                        key={task.id}
+                        task={task}
+                        onToggle={handleToggleTask}
+                        onDelete={handleDeleteTask}
+                    />
+                ))
+            )}
+        </div>
+    );
+
+    const renderWeekView = () => {
+        const startOfWeek = getStartOfWeek(currentDate);
+        const weekDays = Array.from({ length: 7 }, (_, i) => {
+            const d = new Date(startOfWeek);
+            d.setDate(startOfWeek.getDate() + i);
+            return d;
+        });
+
+        return (
+            <div className="animate-fade-in pb-20">
+                <div className="flex justify-between items-center mb-4">
+                    <button onClick={() => setCurrentDate(new Date(currentDate.setDate(currentDate.getDate() - 7)))} className="p-2 hover:bg-dark-800 rounded-lg text-slate-400"><ChevronLeft /></button>
+                    <h3 className="text-white font-medium">{startOfWeek.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}</h3>
+                    <button onClick={() => setCurrentDate(new Date(currentDate.setDate(currentDate.getDate() + 7)))} className="p-2 hover:bg-dark-800 rounded-lg text-slate-400"><ChevronRight /></button>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-7 gap-4">
+                    {weekDays.map((day) => {
+                        const dayTasks = tasks.filter(t => {
+                            if (!t.dueDate) return false;
+                            const tDate = new Date(t.dueDate);
+                            return tDate.getDate() === day.getDate() && tDate.getMonth() === day.getMonth() && tDate.getFullYear() === day.getFullYear();
+                        });
+                        const isToday = day.toDateString() === new Date().toDateString();
+
+                        return (
+                            <div key={day.toISOString()} className={`bg-dark-800/50 rounded-xl p-3 border ${isToday ? 'border-neon-500/50' : 'border-dark-700'} min-h-[150px]`}>
+                                <div className={`text-xs font-bold mb-3 uppercase tracking-wider ${isToday ? 'text-neon-400' : 'text-slate-500'}`}>
+                                    {day.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric' })}
+                                </div>
+                                <div className="space-y-2">
+                                    {dayTasks.map(t => (
+                                        <MiniTaskCard
+                                            key={t.id}
+                                            task={t}
+                                            onToggle={handleToggleTask}
+                                            onDelete={handleDeleteTask}
+                                            onEdit={handleEditTask}
+                                        />
+                                    ))}
+                                    {dayTasks.length === 0 && <div className="text-[10px] text-slate-700 text-center py-2">Sin tareas</div>}
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+            </div>
+        );
     };
 
-    const sortedTasks = [...tasks].sort((a, b) => a.dueDate - b.dueDate);
+    const renderMonthView = () => {
+        const year = currentDate.getFullYear();
+        const month = currentDate.getMonth();
+        const daysInMonth = getDaysInMonth(year, month);
+        const firstDayOfMonth = new Date(year, month, 1).getDay();
+        const offset = firstDayOfMonth === 0 ? 6 : firstDayOfMonth - 1; // Adjust for Monday start
 
-    const filteredTasks = sortedTasks.filter(task => {
-        if (filter === 'active') return !task.completed;
-        if (filter === 'completed') return task.completed;
-        return true;
-    });
+        const days = Array.from({ length: offset + daysInMonth }, (_, i) => {
+            if (i < offset) return null;
+            return i - offset + 1;
+        });
+
+        const selectedTasks = tasks.filter(t => {
+            if (!t.dueDate) return false;
+            const tDate = new Date(t.dueDate);
+            return tDate.toDateString() === selectedDate.toDateString();
+        });
+
+        return (
+            <div className="animate-fade-in pb-20">
+                <div className="flex justify-between items-center mb-4">
+                    <button onClick={() => setCurrentDate(new Date(year, month - 1, 1))} className="p-2 hover:bg-dark-800 rounded-lg text-slate-400"><ChevronLeft /></button>
+                    <h3 className="text-white font-medium capitalize">{new Date(year, month).toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}</h3>
+                    <button onClick={() => setCurrentDate(new Date(year, month + 1, 1))} className="p-2 hover:bg-dark-800 rounded-lg text-slate-400"><ChevronRight /></button>
+                </div>
+
+                <div className="grid grid-cols-7 gap-1 mb-6">
+                    {['Lun', 'Mar', 'Mie', 'Jue', 'Vie', 'Sab', 'Dom'].map(d => (
+                        <div key={d} className="text-center text-xs text-slate-500 py-2">{d}</div>
+                    ))}
+                    {days.map((day, idx) => {
+                        if (!day) return <div key={idx} className="bg-transparent aspect-square"></div>;
+
+                        const currentDayDate = new Date(year, month, day);
+                        const dayTasks = tasks.filter(t => {
+                            if (!t.dueDate) return false;
+                            const tDate = new Date(t.dueDate);
+                            return tDate.getDate() === day && tDate.getMonth() === month && tDate.getFullYear() === year;
+                        });
+
+                        const isToday = currentDayDate.toDateString() === new Date().toDateString();
+                        const isSelected = currentDayDate.toDateString() === selectedDate.toDateString();
+
+                        return (
+                            <div
+                                key={idx}
+                                onClick={() => setSelectedDate(currentDayDate)}
+                                className={`
+                                relative p-1 aspect-square rounded-lg overflow-hidden cursor-pointer transition-all duration-200
+                                ${isSelected ? 'bg-neon-500/20 border-neon-500 shadow-[0_0_10px_rgba(16,185,129,0.2)] border' : 'bg-dark-800/30 border border-dark-700/50 hover:bg-dark-800'}
+                                ${isToday && !isSelected ? 'ring-1 ring-neon-500' : ''}
+                            `}
+                            >
+                                <div className={`text-xs text-right mb-1 ${isToday || isSelected ? 'text-neon-400 font-bold' : 'text-slate-500'}`}>{day}</div>
+                                <div className="space-y-0.5 overflow-y-auto max-h-[70%] no-scrollbar">
+                                    {dayTasks.map(t => (
+                                        <div key={t.id} className={`w-full h-1.5 rounded-full ${t.isCompleted ? 'bg-slate-700' : 'bg-neon-500'}`} title={t.title}></div>
+                                    ))}
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+
+                <div className="bg-dark-900/50 rounded-2xl border border-dark-700 p-4">
+                    <h4 className="text-sm font-medium text-slate-300 mb-4 flex items-center gap-2">
+                        <CalendarIcon className="w-4 h-4 text-neon-500" />
+                        Tareas para el {selectedDate.toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' })}
+                    </h4>
+
+                    <div className="space-y-2">
+                        {selectedTasks.length === 0 ? (
+                            <div className="text-center py-6 text-slate-600 text-xs">No hay tareas programadas para este día</div>
+                        ) : (
+                            selectedTasks.map(task => (
+                                <MiniTaskCard
+                                    key={task.id}
+                                    task={task}
+                                    onToggle={handleToggleTask}
+                                    onDelete={handleDeleteTask}
+                                    onEdit={handleEditTask}
+                                />
+                            ))
+                        )}
+                    </div>
+                </div>
+            </div>
+        );
+    };
 
     return (
-        <div className="min-h-screen font-sans selection:bg-emerald-900/50 selection:text-emerald-50 text-slate-200">
-            <Background />
+        <div className="min-h-screen bg-dark-900 selection:bg-neon-500/30 selection:text-neon-200">
+            <div className="fixed inset-0 z-0 pointer-events-none">
+                <div className="absolute top-[-10%] right-[-5%] w-[500px] h-[500px] bg-neon-500/5 rounded-full blur-[100px]"></div>
+                <div className="absolute bottom-[-10%] left-[-10%] w-[600px] h-[600px] bg-blue-600/5 rounded-full blur-[120px]"></div>
+            </div>
 
-            <main className="relative z-10 max-w-full mx-auto px-4 md:px-12 py-8 md:py-16 flex flex-col min-h-screen">
+            <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 py-8 md:py-12">
 
-                {/* Header */}
-                <header className={`mb-8 transition-all duration-1000 ease-out transform ${mounted ? 'translate-y-0 opacity-100' : '-translate-y-10 opacity-0'} ${focusedTaskId ? 'blur-md pointer-events-none opacity-20' : ''}`}>
-                    <div className="flex flex-col md:flex-row md:items-end justify-between mb-4 gap-4">
-                        <div className="group cursor-default">
-                            <h1 className="text-7xl font-sans font-black tracking-tighter text-gradient-animate leading-none">
-                                tilde.
+                <header className="mb-8 flex flex-col md:flex-row justify-between items-start md:items-end gap-4 animate-fade-in">
+                    <div>
+                        <div className="flex items-center gap-2 mb-1">
+                            <div className="bg-neon-500/10 p-1.5 rounded-lg">
+                                <Zap className="w-5 h-5 text-neon-400 fill-neon-400/20" />
+                            </div>
+                            <h1 className="text-2xl md:text-3xl font-bold tracking-tighter text-white">
+                                tilde<span className="text-neon-400">AI</span>
                             </h1>
-                            <div className="h-1.5 w-12 bg-emerald-500/50 mt-4 rounded-full shadow-[0_0_20px_rgba(16,185,129,0.8)] group-hover:w-24 transition-all duration-500"></div>
                         </div>
+                        <p className="text-slate-500 text-xs md:text-sm font-light">
+                            Organizador de tareas minimalista
+                        </p>
+                    </div>
 
-                        <div className="flex gap-2 bg-white/5 p-1.5 rounded-2xl border border-white/5 backdrop-blur-xl">
-                            <ViewModeButton active={viewMode === 'list'} onClick={() => setViewMode('list')} icon={<LayoutList size={14} />} label="List" />
-                            <ViewModeButton active={viewMode === 'week'} onClick={() => setViewMode('week')} icon={<CalendarDays size={14} />} label="Week" />
-                            <ViewModeButton active={viewMode === 'month'} onClick={() => setViewMode('month')} icon={<CalendarRange size={14} />} label="Month" />
-                        </div>
+                    <div className="flex items-center gap-2 bg-dark-800/50 p-1 rounded-xl border border-dark-700/50">
+                        <button onClick={() => setView('list')} className={`p-2 rounded-lg transition-all ${view === 'list' ? 'bg-neon-500/20 text-neon-400' : 'text-slate-500 hover:text-slate-300'}`} title="Lista">
+                            <List className="w-5 h-5" />
+                        </button>
+                        <button onClick={() => setView('week')} className={`p-2 rounded-lg transition-all ${view === 'week' ? 'bg-neon-500/20 text-neon-400' : 'text-slate-500 hover:text-slate-300'}`} title="Semana">
+                            <CalendarDays className="w-5 h-5" />
+                        </button>
+                        <button onClick={() => setView('month')} className={`p-2 rounded-lg transition-all ${view === 'month' ? 'bg-neon-500/20 text-neon-400' : 'text-slate-500 hover:text-slate-300'}`} title="Mes">
+                            <CalendarIcon className="w-5 h-5" />
+                        </button>
                     </div>
                 </header>
 
-                {/* Input */}
-                <div className={`transition-all duration-1000 delay-100 ease-out transform ${mounted ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'} ${focusedTaskId ? 'blur-md pointer-events-none opacity-20' : ''}`}>
-                    <TaskInput onAdd={addTask} />
-                </div>
-
-                {/* View Content */}
-                {viewMode === 'list' ? (
-                    <>
-                        <ProductivityStats tasks={tasks} />
-
-                        {/* List Filters */}
-                        <div className={`flex items-center gap-4 mb-4 overflow-x-auto pb-2 transition-all duration-1000 delay-200 ease-out ${mounted ? 'opacity-100' : 'opacity-0'}`}>
-                            <FilterButton active={filter === 'all'} onClick={() => setFilter('all')} icon={<ListFilter size={14} />} label="All Tasks" />
-                            <FilterButton active={filter === 'active'} onClick={() => setFilter('active')} icon={<Circle size={14} />} label="In Progress" />
-                            <FilterButton active={filter === 'completed'} onClick={() => setFilter('completed')} icon={<CheckCircle2 size={14} />} label="Completed" />
-                        </div>
-
-                        <div className="flex-grow space-y-3 pb-20">
-                            {isLoading ? (
-                                <div className="space-y-3">
-                                    {[1, 2, 3, 4, 5].map((i) => (
-                                        <div key={i} className="h-16 w-full rounded-2xl glass-panel skeleton-box border-transparent shadow-none" />
-                                    ))}
-                                    <div className="flex flex-col items-center justify-center py-10">
-                                        <p className="text-emerald-400 font-mono text-[10px] uppercase tracking-[0.3em] animate-pulse">Sincronizando Sistema</p>
-                                    </div>
-                                </div>
-                            ) : filteredTasks.length > 0 ? (
-                                <AnimatePresence mode="popLayout">
-                                    {filteredTasks.map((task, index) => (
-                                        <TaskItem
-                                            key={task.id}
-                                            task={task}
-                                            index={index}
-                                            onToggle={toggleTask}
-                                            onDelete={deleteTask}
-                                            onUpdate={updateTaskContent}
-                                            isFocused={focusedTaskId === task.id}
-                                            isAnyFocused={focusedTaskId !== null}
-                                            onFocus={() => toggleFocus(task.id)}
-                                        />
-                                    ))}
-                                </AnimatePresence>
-                            ) : (
-                                <motion.div
-                                    initial={{ opacity: 0, scale: 0.9 }}
-                                    animate={{ opacity: 1, scale: 1 }}
-                                    className="flex flex-col items-center justify-center py-24 border border-dashed border-white/5 rounded-[2.5rem] bg-white/[0.01] group hover:bg-white/[0.02] transition-colors duration-700"
-                                >
-                                    <div className="relative mb-6">
-                                        <div className="absolute inset-0 bg-emerald-500/20 blur-3xl rounded-full group-hover:bg-emerald-500/30 transition-all duration-700"></div>
-                                        <div className="relative w-20 h-20 rounded-3xl bg-black/40 border border-white/10 flex items-center justify-center shadow-2xl overflow-hidden">
-                                            <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/10 to-transparent"></div>
-                                            <CheckCircle2 size={32} className="text-emerald-500/40 group-hover:text-emerald-400 group-hover:scale-110 transition-all duration-700" />
-                                        </div>
-                                    </div>
-                                    <h3 className="text-emerald-100/60 font-medium tracking-tight text-lg">Silencio Operativo</h3>
-                                    <p className="text-gray-500 text-sm mt-1 font-light italic">No hay señales detectadas en el cuadrante actual.</p>
-                                    <button
-                                        onClick={() => window.document.getElementById('task-input-field')?.focus()}
-                                        className="mt-8 px-6 py-2 rounded-full border border-emerald-500/20 text-emerald-400 text-[10px] uppercase tracking-[0.2em] hover:bg-emerald-500/10 transition-all duration-300"
-                                    >
-                                        Iniciar Secuencia
-                                    </button>
-                                </motion.div>
-                            )}
-                        </div>
-                    </>
-                ) : (
-                    <motion.div
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="flex-grow pb-20"
-                    >
-                        <CalendarView
-                            tasks={tasks}
-                            mode={viewMode}
-                            onToggle={toggleTask}
-                            onDelete={deleteTask}
-                            onUpdate={updateTaskContent}
-                            onTaskClick={(id) => {
-                                setViewMode('list');
-                                setTimeout(() => {
-                                    const element = document.querySelector(`[data-task-id="${id}"]`);
-                                    element?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                                }, 100);
-                            }}
-                        />
-                    </motion.div>
-                )}
-
-                <footer className="mt-auto pt-8 text-center text-[10px] text-emerald-900/40 font-mono uppercase tracking-widest">
-                    System.Override.Initiated
-                </footer>
-
-                <CommandPalette
-                    isOpen={isCommandPaletteOpen}
-                    onClose={() => setIsCommandPaletteOpen(false)}
-                    tasks={tasks}
-                    onAction={(action) => {
-                        if (action.type === 'view') {
-                            setViewMode(action.value);
-                        } else if (action.type === 'command') {
-                            if (action.value === 'new') {
-                                window.document.getElementById('task-input-field')?.focus();
-                                setViewMode('list');
-                            }
-                        }
-                    }}
-                    onSelectTask={(id) => {
-                        setViewMode('list');
-                        setTimeout(() => {
-                            const element = document.querySelector(`[data-task-id="${id}"]`);
-                            if (element) {
-                                element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                                element.classList.add('ring-2', 'ring-emerald-500/50', 'bg-emerald-500/5');
-                                setTimeout(() => {
-                                    element.classList.remove('ring-2', 'ring-emerald-500/50', 'bg-emerald-500/5');
-                                }, 2000);
-                            }
-                        }, 100);
-                    }}
+                <TaskInput
+                    onSaveTask={handleSaveTask}
+                    taskToEdit={taskToEdit}
+                    onCancelEdit={() => setTaskToEdit(null)}
                 />
 
-                <ToastContainer toasts={toasts} />
-            </main>
+                {view === 'list' && (
+                    <div className="sticky top-4 z-30 mb-6 -mx-2 px-2 py-3 bg-dark-900/80 backdrop-blur-xl border-y border-white/5 flex flex-col md:flex-row gap-4 items-center justify-between rounded-xl transition-all duration-300">
+                        <div className="relative w-full md:w-auto md:flex-1">
+                            <input
+                                type="text"
+                                placeholder="Buscar..."
+                                value={filter.search}
+                                onChange={(e) => setFilter(prev => ({ ...prev, search: e.target.value }))}
+                                className="w-full bg-dark-800 border border-dark-700 rounded-lg pl-3 pr-4 py-1.5 text-sm text-slate-300 focus:border-neon-500/50 focus:ring-1 focus:ring-neon-500/20 outline-none transition-all placeholder:text-slate-600"
+                            />
+                        </div>
+
+                        <div className="flex items-center gap-2 w-full md:w-auto">
+                            <div className="flex bg-dark-800 p-1 rounded-lg border border-dark-700">
+                                {['all', 'active', 'completed'].map((status) => (
+                                    <button
+                                        key={status}
+                                        onClick={() => setFilter(prev => ({ ...prev, status }))}
+                                        className={`px-3 py-1 rounded text-xs font-medium transition-all duration-300 ${filter.status === status
+                                            ? 'bg-slate-700 text-white shadow-sm'
+                                            : 'text-slate-500 hover:text-slate-300'
+                                            }`}
+                                    >
+                                        {status === 'all' ? 'Todo' : status === 'active' ? 'Activo' : 'Listo'}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {view === 'list' && renderListView()}
+                {view === 'week' && renderWeekView()}
+                {view === 'month' && renderMonthView()}
+
+                {view === 'list' && tasks.some(t => t.isCompleted) && (
+                    <div className="pt-8 text-center pb-20">
+                        <button
+                            onClick={clearCompleted}
+                            className="text-xs text-slate-600 hover:text-red-400 transition-colors duration-300"
+                        >
+                            Eliminar tareas completadas
+                        </button>
+                    </div>
+                )}
+
+            </div>
         </div>
     );
 };
 
-const ToastContainer = ({ toasts }) => {
-    return (
-        <div className="fixed bottom-8 right-8 z-[200] flex flex-col gap-3">
-            <AnimatePresence>
-                {toasts.map((toast) => (
-                    <motion.div
-                        key={toast.id}
-                        initial={{ opacity: 0, x: 50, scale: 0.8 }}
-                        animate={{ opacity: 1, x: 0, scale: 1 }}
-                        exit={{ opacity: 0, scale: 0.5, transition: { duration: 0.2 } }}
-                        className={`px-6 py-3 rounded-2xl shadow-2xl backdrop-blur-xl border flex items-center gap-3 min-w-[240px] ${toast.type === 'error'
-                                ? 'bg-rose-500/10 border-rose-500/20 text-rose-200'
-                                : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-100'
-                            }`}
-                    >
-                        <div className={`w-2 h-2 rounded-full animate-pulse ${toast.type === 'error' ? 'bg-rose-500' : 'bg-emerald-500'}`} />
-                        <span className="text-xs font-medium uppercase tracking-[0.1em]">{toast.message}</span>
-                    </motion.div>
-                ))}
-            </AnimatePresence>
-        </div>
-    );
-};
-
-const ProductivityStats = ({ tasks }) => {
-    const total = tasks.length;
-    const completed = tasks.filter(t => t.completed).length;
-    const pending = total - completed;
-    const percent = total > 0 ? Math.round((completed / total) * 100) : 0;
-
-    return (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-            {[
-                { label: 'Total', value: total, color: 'text-emerald-100' },
-                { label: 'Completas', value: completed, color: 'text-emerald-400' },
-                { label: 'Pendientes', value: pending, color: 'text-rose-400' },
-                { label: 'Eficiencia', value: `${percent}%`, color: 'text-cyan-400' }
-            ].map((stat, i) => (
-                <motion.div
-                    key={stat.label}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.3 + (i * 0.1) }}
-                    className="glass-panel p-4 rounded-2xl border-white/5 relative overflow-hidden group"
-                >
-                    <div className="absolute inset-0 bg-gradient-to-br from-white/[0.02] to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                    <p className="text-[9px] uppercase tracking-[0.2em] text-gray-500 mb-1">{stat.label}</p>
-                    <p className={`text-2xl font-black tracking-tighter ${stat.color}`}>{stat.value}</p>
-                </motion.div>
-            ))}
-        </div>
-    );
-};
-
-const ViewModeButton = ({ active, onClick, icon, label }) => (
-    <motion.button
-        whileHover={{ y: -2 }}
-        whileTap={{ scale: 0.95 }}
-        onClick={onClick}
-        className={`relative flex items-center gap-2 px-4 py-2 rounded-xl text-xs transition-all duration-500 overflow-hidden ${active
-            ? 'text-emerald-400 font-bold'
-            : 'text-gray-500 hover:text-emerald-300'
-            }`}
-    >
-        {active && (
-            <motion.div
-                layoutId="activeTabMode"
-                className="absolute inset-0 bg-emerald-500/10 border border-emerald-500/20 rounded-xl"
-                transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
-            />
-        )}
-        <span className="relative z-10 flex items-center gap-2">
-            {icon}
-            <span className="hidden sm:inline uppercase tracking-widest text-[10px]">{label}</span>
-        </span>
-    </motion.button>
-);
-
-const FilterButton = ({ active, onClick, icon, label }) => (
-    <motion.button
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.95 }}
-        onClick={onClick}
-        className={`flex items-center gap-2 px-4 py-2 rounded-full text-[10px] uppercase tracking-wider transition-all duration-300 border whitespace-nowrap ${active
-            ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.1)]'
-            : 'border-white/5 text-gray-500 hover:text-gray-300 hover:bg-white/5'
-            }`}
-    >
-        {icon}
-        <span>{label}</span>
-    </motion.button>
+const Loader2 = ({ className }) => (
+    <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56" /></svg>
 );
 
 export default App;

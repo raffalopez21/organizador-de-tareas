@@ -1,152 +1,287 @@
-import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Calendar, Clock } from 'lucide-react';
-import { CATEGORIES } from '../utils/constants';
+import React, { useState, useRef, useEffect } from 'react';
+import { Sparkles, Plus, Loader2, Command, Calendar as CalendarIcon, FileText, X, Clock, ChevronDown, Save, Pencil } from 'lucide-react';
+import { breakdownTask } from '../services/geminiService';
 
-export const TaskInput = ({ onAdd }) => {
-    const [text, setText] = useState('');
+// Generate time arrays
+const HOURS = Array.from({ length: 24 }, (_, i) => i.toString().padStart(2, '0'));
+const MINUTES = Array.from({ length: 60 }, (_, i) => i.toString().padStart(2, '0'));
+
+const TaskInput = ({ onSaveTask, taskToEdit, onCancelEdit }) => {
+    const [input, setInput] = useState('');
     const [notes, setNotes] = useState('');
-    const [category, setCategory] = useState('personal');
+    const [date, setDate] = useState('');
+    const [hour, setHour] = useState('');
+    const [minute, setMinute] = useState('');
 
-    // Initialize with current date and time
-    const now = new Date();
-    const [date, setDate] = useState(now.toISOString().split('T')[0]);
-    const [hour, setHour] = useState(now.getHours().toString().padStart(2, '0'));
-    const [minute, setMinute] = useState(now.getMinutes().toString().padStart(2, '0'));
+    const [isProcessing, setIsProcessing] = useState(false);
+    const [useAI, setUseAI] = useState(true);
+    const [showOptions, setShowOptions] = useState(false);
+    const dropdownRef = useRef(null);
 
-    const [isExpanded, setIsExpanded] = useState(false);
+    // Populate form when editing
+    useEffect(() => {
+        if (taskToEdit) {
+            setInput(taskToEdit.title);
+            setNotes(taskToEdit.notes || '');
 
-    const handleSubmit = (e) => {
-        e.preventDefault();
-        if (text.trim()) {
-            const dueStamp = new Date(`${date}T${hour}:${minute}:00`).getTime();
-            onAdd(text, category, dueStamp, notes);
-            setText('');
+            if (taskToEdit.dueDate) {
+                const d = new Date(taskToEdit.dueDate);
+                // Format YYYY-MM-DD
+                const year = d.getFullYear();
+                const month = String(d.getMonth() + 1).padStart(2, '0');
+                const day = String(d.getDate()).padStart(2, '0');
+                setDate(`${year}-${month}-${day}`);
+
+                // Format HH:MM
+                setHour(String(d.getHours()).padStart(2, '0'));
+                setMinute(String(d.getMinutes()).padStart(2, '0'));
+            } else {
+                setDate('');
+                setHour('');
+                setMinute('');
+            }
+            setShowOptions(true); // Auto expand options when editing
+        } else {
+            // Reset if edit cancelled externally or finished
+            setInput('');
             setNotes('');
-            setIsExpanded(false);
+            setDate('');
+            setHour('');
+            setMinute('');
+            setShowOptions(false);
+        }
+    }, [taskToEdit]);
 
-            const nextNow = new Date();
-            setDate(nextNow.toISOString().split('T')[0]);
-            setHour(nextNow.getHours().toString().padStart(2, '0'));
-            setMinute(nextNow.getMinutes().toString().padStart(2, '0'));
+    // Close dropdown when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+                setShowOptions(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        if (!input.trim() || isProcessing) return;
+
+        const rawTitle = input.trim();
+        const currentNotes = notes.trim();
+
+        // Parse due date
+        let dueDate = null;
+        if (date) {
+            const timeStr = (hour !== '' && minute !== '') ? `${hour}:${minute}` : '12:00';
+            const dateStr = `${date}T${timeStr}`;
+            dueDate = new Date(dateStr).getTime();
+        }
+
+        // Common Task Data
+        const baseData = {
+            title: rawTitle,
+            notes: currentNotes,
+            dueDate: dueDate
+        };
+
+        // Reset Form
+        setInput('');
+        setNotes('');
+        setDate('');
+        setHour('');
+        setMinute('');
+        setShowOptions(false);
+
+        // Editing Flow - Skip AI
+        if (taskToEdit) {
+            onSaveTask({
+                ...taskToEdit,
+                ...baseData,
+            });
+            if (onCancelEdit) onCancelEdit();
+            return;
+        }
+
+        // New Task Flow - Use AI optionally
+        if (useAI) {
+            setIsProcessing(true);
+            try {
+                const analysis = await breakdownTask(rawTitle);
+
+                // Append AI notes to existing notes if any
+                const aiNotes = analysis.subtasks && analysis.subtasks.length > 0
+                    ? `\n\nDesglose IA:\n${analysis.subtasks.map(s => `- ${s}`).join('\n')}`
+                    : '';
+
+                onSaveTask({
+                    ...baseData,
+                    notes: (baseData.notes + aiNotes).trim(),
+                    isCompleted: false,
+                });
+
+            } catch (err) {
+                onSaveTask({
+                    ...baseData,
+                    isCompleted: false,
+                });
+            } finally {
+                setIsProcessing(false);
+            }
+        } else {
+            onSaveTask({
+                ...baseData,
+                isCompleted: false,
+            });
         }
     };
 
-    const hours = Array.from({ length: 24 }, (_, i) => i.toString().padStart(2, '0'));
-    const minutes = Array.from({ length: 60 }, (_, i) => i.toString().padStart(2, '0'));
-
     return (
-        <form onSubmit={handleSubmit} className="relative z-10 mb-8">
-            <div
-                className={`glass-panel rounded-2xl p-2 transition-all duration-500 pioneer-hover ${isExpanded ? 'ring-1 ring-white/20 shadow-[0_0_40px_rgba(1,49,16,0.4)]' : ''
-                    }`}
-            >
-                <div className="flex flex-col px-4 py-2 gap-2">
-                    <input
-                        type="text"
-                        value={text}
-                        onChange={(e) => {
-                            setText(e.target.value);
-                            if (e.target.value.length > 0) setIsExpanded(true);
-                        }}
-                        onFocus={() => {
-                            if (text.length > 0) setIsExpanded(true);
-                        }}
-                        placeholder="New task..."
-                        className="flex-grow bg-transparent border-none outline-none text-white placeholder-gray-500 text-lg font-light tracking-wide h-10 md:h-12"
-                    />
+        <div className="relative mb-8 group z-40" ref={dropdownRef}>
+            {/* Glow Effect - Changes color if editing */}
+            <div className={`absolute -inset-0.5 bg-gradient-to-r rounded-2xl opacity-20 group-hover:opacity-40 blur transition duration-500 ${taskToEdit ? 'from-blue-500 to-indigo-500' : 'from-neon-500 to-teal-500'}`}></div>
 
-                    {/* Expandable Notes Area */}
-                    <div className={`overflow-hidden transition-all duration-500 ease-in-out ${isExpanded ? 'max-h-32 opacity-100 mt-2 mb-4' : 'max-h-0 opacity-0'}`}>
-                        <textarea
-                            value={notes}
-                            onChange={(e) => setNotes(e.target.value)}
-                            placeholder="Add more details or notes..."
-                            className="w-full bg-black/20 border border-white/5 rounded-xl p-3 text-sm text-gray-300 placeholder-gray-600 outline-none focus:border-emerald-500/30 transition-colors h-24 resize-none italic"
-                        />
+            <div className={`relative bg-dark-900 rounded-2xl border border-dark-700 shadow-2xl transition-all duration-300 ${showOptions ? 'rounded-b-none border-b-0' : ''}`}>
+                <form onSubmit={handleSubmit} className="flex items-center">
+                    <div className="pl-4 text-slate-500">
+                        {taskToEdit ? <Pencil className="w-5 h-5 text-blue-400" /> : <Command className="w-5 h-5" />}
                     </div>
 
-                    <div className="flex flex-wrap items-center gap-2">
-                        {/* Date Selector */}
-                        <div className="relative group flex items-center bg-black/20 border border-white/10 rounded-lg px-2 overflow-hidden hover:border-emerald-500/30 transition-colors">
-                            <Calendar size={14} className="text-emerald-500/70 mr-1" />
+                    <input
+                        type="text"
+                        value={input}
+                        onChange={(e) => setInput(e.target.value)}
+                        onFocus={() => setShowOptions(true)}
+                        placeholder={taskToEdit ? "Editando tarea..." : "Nueva tarea..."}
+                        className="w-full bg-transparent text-slate-200 placeholder-slate-600 px-4 py-4 text-lg outline-none font-light"
+                        disabled={isProcessing}
+                    />
+
+                    <div className="pr-2 flex items-center gap-1">
+                        {taskToEdit && (
+                            <button
+                                type="button"
+                                onClick={onCancelEdit}
+                                className="p-2 rounded-lg text-red-400 hover:bg-red-500/10 transition-colors mr-1"
+                                title="Cancelar edición"
+                            >
+                                <X className="w-5 h-5" />
+                            </button>
+                        )}
+
+                        <button
+                            type="button"
+                            onClick={() => setShowOptions(!showOptions)}
+                            className={`p-2 rounded-lg transition-all duration-300 ${showOptions || date ? 'text-neon-400 bg-neon-400/10' : 'text-slate-600 hover:text-slate-400'}`}
+                        >
+                            <CalendarIcon className="w-5 h-5" />
+                        </button>
+
+                        {!taskToEdit && (
+                            <button
+                                type="button"
+                                onClick={() => setUseAI(!useAI)}
+                                className={`p-2 rounded-lg transition-all duration-300 ${useAI ? 'text-neon-400 bg-neon-400/10' : 'text-slate-600 hover:text-slate-400'}`}
+                                title="AI Analysis"
+                            >
+                                <Sparkles className="w-5 h-5" />
+                            </button>
+                        )}
+
+                        <button
+                            type="submit"
+                            disabled={!input.trim() || isProcessing}
+                            className={`p-2 rounded-lg transition-all duration-300 border border-slate-700 ${taskToEdit ? 'bg-blue-600/20 text-blue-400 hover:bg-blue-600/30' : 'bg-slate-800 text-slate-300 hover:bg-slate-700 disabled:opacity-50'}`}
+                        >
+                            {isProcessing ? <Loader2 className="w-5 h-5 animate-spin text-neon-400" /> : taskToEdit ? <Save className="w-5 h-5" /> : <Plus className="w-5 h-5" />}
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            {/* Menú Desplegable (Dropdown) */}
+            <div className={`
+          absolute top-full left-0 right-0 bg-dark-900 border border-t-0 border-dark-700 rounded-b-2xl shadow-xl overflow-hidden transition-all duration-300 ease-in-out origin-top z-50
+          ${showOptions ? 'max-h-96 opacity-100 py-4' : 'max-h-0 opacity-0 py-0'}
+      `}>
+                <div className="px-4 space-y-4">
+
+                    {/* Date & Time Row */}
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-1">
+                            <label className="text-xs text-slate-500 font-medium ml-1 flex items-center gap-1">
+                                <CalendarIcon className="w-3 h-3" /> Fecha
+                            </label>
                             <input
                                 type="date"
                                 value={date}
                                 onChange={(e) => setDate(e.target.value)}
-                                className="bg-transparent border-none py-1.5 text-xs text-gray-300 focus:outline-none w-[110px] [color-scheme:dark]"
+                                className="w-full bg-dark-800 border border-dark-700 rounded-lg px-3 py-2 text-sm text-slate-300 focus:border-neon-500 outline-none transition-colors appearance-none"
                             />
                         </div>
+                        <div className="space-y-1">
+                            <label className="text-xs text-slate-500 font-medium ml-1 flex items-center gap-1">
+                                <Clock className="w-3 h-3" /> Hora
+                            </label>
+                            <div className="flex gap-2">
+                                {/* Hour Select */}
+                                <div className="relative flex-1">
+                                    <select
+                                        value={hour}
+                                        onChange={(e) => setHour(e.target.value)}
+                                        className="w-full bg-dark-800 border border-dark-700 rounded-lg pl-3 pr-8 py-2 text-sm text-slate-300 focus:border-neon-500 outline-none appearance-none transition-colors cursor-pointer"
+                                    >
+                                        <option value="">--</option>
+                                        {HOURS.map(h => (
+                                            <option key={h} value={h}>{h}</option>
+                                        ))}
+                                    </select>
+                                    <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 pointer-events-none" />
+                                </div>
 
-                        {/* Time Selector */}
-                        <div className="relative group flex items-center bg-black/20 border border-white/10 rounded-lg px-2 hover:border-emerald-500/30 transition-colors">
-                            <Clock size={14} className="text-emerald-500/70 mr-1" />
-                            <div className="flex items-center gap-1">
-                                <select
-                                    value={hour}
-                                    onChange={(e) => setHour(e.target.value)}
-                                    className="bg-transparent border-none py-1.5 text-xs text-gray-300 focus:outline-none cursor-pointer hover:text-emerald-400 transition-colors"
-                                >
-                                    {hours.map(h => <option key={h} value={h} className="bg-[#001d11]">{h}</option>)}
-                                </select>
-                                <span className="text-gray-600 text-[10px]">:</span>
-                                <select
-                                    value={minute}
-                                    onChange={(e) => setMinute(e.target.value)}
-                                    className="bg-transparent border-none py-1.5 text-xs text-gray-300 focus:outline-none cursor-pointer hover:text-emerald-400 transition-colors"
-                                >
-                                    {minutes.map(m => <option key={m} value={m} className="bg-[#001d11]">{m}</option>)}
-                                </select>
+                                <div className="text-slate-600 flex items-center font-bold">:</div>
+
+                                {/* Minute Select */}
+                                <div className="relative flex-1">
+                                    <select
+                                        value={minute}
+                                        onChange={(e) => setMinute(e.target.value)}
+                                        className="w-full bg-dark-800 border border-dark-700 rounded-lg pl-3 pr-8 py-2 text-sm text-slate-300 focus:border-neon-500 outline-none appearance-none transition-colors cursor-pointer"
+                                    >
+                                        <option value="">--</option>
+                                        {MINUTES.map(m => (
+                                            <option key={m} value={m}>{m}</option>
+                                        ))}
+                                    </select>
+                                    <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 pointer-events-none" />
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
 
-                <div className="flex items-center justify-between px-4 pb-2 border-t border-white/5 pt-3">
-                    <div className="flex flex-wrap gap-2">
-                        {Object.keys(CATEGORIES).map((cat) => (
-                            <motion.button
-                                whileHover={{ y: -2 }}
-                                whileTap={{ scale: 0.95 }}
-                                key={cat}
-                                type="button"
-                                onClick={() => setCategory(cat)}
-                                className={`text-[9px] uppercase tracking-[0.2em] px-3 py-1.5 rounded-full transition-all duration-300 border ${category === cat
-                                    ? `bg-emerald-500/20 border-emerald-500/50 text-emerald-300 shadow-[0_0_15px_rgba(16,185,129,0.2)]`
-                                    : 'bg-white/5 border-white/5 text-gray-500 hover:border-white/20 hover:text-gray-300'
-                                    }`}
-                            >
-                                {CATEGORIES[cat].label}
-                            </motion.button>
-                        ))}
-                    </div>
-
-                    <div className="flex items-center gap-3">
-                        {isExpanded && (
-                            <button
-                                type="button"
-                                onClick={() => setIsExpanded(false)}
-                                className="text-[10px] uppercase tracking-wider text-gray-500 hover:text-gray-300 transition-colors px-2"
-                            >
-                                Simple view
-                            </button>
-                        )}
-                        <motion.button
-                            whileHover={{ scale: 1.1, rotate: 90 }}
-                            whileTap={{ scale: 0.9 }}
-                            type="submit"
-                            disabled={!text.trim()}
-                            className={`w-10 h-10 rounded-2xl flex items-center justify-center transition-all duration-500 ${text.trim()
-                                ? 'bg-gradient-to-br from-emerald-400 to-emerald-600 text-white hover:shadow-[0_0_25px_rgba(16,185,129,0.5)] active:scale-95'
-                                : 'bg-white/5 text-gray-700 cursor-not-allowed'
-                                }`}
-                        >
-                            <Plus size={20} strokeWidth={3} />
-                        </motion.button>
+                    {/* Notes Row */}
+                    <div className="space-y-1">
+                        <label className="text-xs text-slate-500 font-medium ml-1 flex items-center gap-1">
+                            <FileText className="w-3 h-3" /> Notas / Descripción
+                        </label>
+                        <textarea
+                            value={notes}
+                            onChange={(e) => setNotes(e.target.value)}
+                            placeholder="Detalles adicionales..."
+                            rows={2}
+                            className="w-full bg-dark-800 border border-dark-700 rounded-lg px-3 py-2 text-sm text-slate-300 focus:border-neon-500 outline-none transition-colors resize-none"
+                        />
                     </div>
                 </div>
             </div>
-        </form>
+
+            {isProcessing && (
+                <div className="absolute -bottom-1 left-0 right-0 h-[2px] bg-dark-800 rounded-full overflow-hidden z-50">
+                    <div className="h-full bg-neon-500 animate-[shimmer_1.5s_infinite_linear] w-1/3"></div>
+                </div>
+            )}
+        </div>
     );
 };
 
+export default TaskInput;

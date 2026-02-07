@@ -20,7 +20,7 @@ const App = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [filter, setFilter] = useState({
         search: '',
-        status: 'all',
+        status: 'active', // Set "active" by default
     });
 
     const [view, setView] = useState('list');
@@ -238,87 +238,51 @@ const App = () => {
         const year = currentDate.getFullYear();
         const month = currentDate.getMonth();
         const daysInMonth = getDaysInMonth(year, month);
-        const firstDayOfMonth = new Date(year, month, 1).getDay();
-        const offset = firstDayOfMonth === 0 ? 6 : firstDayOfMonth - 1; // Adjust for Monday start
 
-        const days = Array.from({ length: offset + daysInMonth }, (_, i) => {
-            if (i < offset) return null;
-            return i - offset + 1;
-        });
-
-        const selectedTasks = tasks.filter(t => {
-            if (!t.dueDate) return false;
-            const tDate = new Date(t.dueDate);
-            return tDate.toDateString() === selectedDate.toDateString();
+        // Create an array of all days in the current month
+        const monthDays = Array.from({ length: daysInMonth }, (_, i) => {
+            return new Date(year, month, i + 1);
         });
 
         return (
             <div className="animate-fade-in pb-20">
-                <div className="flex justify-between items-center mb-4">
+                <div className="flex justify-between items-center mb-6">
                     <button onClick={() => setCurrentDate(new Date(year, month - 1, 1))} className="p-2 hover:bg-dark-800 rounded-lg text-slate-400"><ChevronLeft /></button>
-                    <h3 className="text-white font-medium capitalize">{new Date(year, month).toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}</h3>
+                    <h3 className="text-white font-medium capitalize text-lg">{new Date(year, month).toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}</h3>
                     <button onClick={() => setCurrentDate(new Date(year, month + 1, 1))} className="p-2 hover:bg-dark-800 rounded-lg text-slate-400"><ChevronRight /></button>
                 </div>
 
-                <div className="grid grid-cols-7 gap-1 mb-6">
-                    {['Lun', 'Mar', 'Mie', 'Jue', 'Vie', 'Sab', 'Dom'].map(d => (
-                        <div key={d} className="text-center text-xs text-slate-500 py-2">{d}</div>
-                    ))}
-                    {days.map((day, idx) => {
-                        if (!day) return <div key={idx} className="bg-transparent aspect-square"></div>;
-
-                        const currentDayDate = new Date(year, month, day);
+                {/* 7 columns grid for a traditional calendar layout but with detailed boxes like week view */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
+                    {monthDays.map((day) => {
                         const dayTasks = tasks.filter(t => {
                             if (!t.dueDate) return false;
                             const tDate = new Date(t.dueDate);
-                            return tDate.getDate() === day && tDate.getMonth() === month && tDate.getFullYear() === year;
+                            return tDate.getDate() === day.getDate() && tDate.getMonth() === day.getMonth() && tDate.getFullYear() === day.getFullYear();
                         });
-
-                        const isToday = currentDayDate.toDateString() === new Date().toDateString();
-                        const isSelected = currentDayDate.toDateString() === selectedDate.toDateString();
+                        const isToday = day.toDateString() === new Date().toDateString();
 
                         return (
-                            <div
-                                key={idx}
-                                onClick={() => setSelectedDate(currentDayDate)}
-                                className={`
-                                relative p-1 aspect-square rounded-lg overflow-hidden cursor-pointer transition-all duration-200
-                                ${isSelected ? 'bg-neon-500/20 border-neon-500 shadow-[0_0_10px_rgba(16,185,129,0.2)] border' : 'bg-dark-800/30 border border-dark-700/50 hover:bg-dark-800'}
-                                ${isToday && !isSelected ? 'ring-1 ring-neon-500' : ''}
-                            `}
-                            >
-                                <div className={`text-xs text-right mb-1 ${isToday || isSelected ? 'text-neon-400 font-bold' : 'text-slate-500'}`}>{day}</div>
-                                <div className="space-y-0.5 overflow-y-auto max-h-[70%] no-scrollbar">
+                            <div key={day.toISOString()} className={`bg-dark-800/50 rounded-xl p-2.5 border transition-colors ${isToday ? 'border-neon-500/50 hover:bg-dark-800/80' : 'border-dark-700 hover:border-dark-600'} min-h-[140px] flex flex-col`}>
+                                <div className={`text-[10px] font-bold mb-2 uppercase tracking-tight flex justify-between items-center ${isToday ? 'text-neon-400' : 'text-slate-500'}`}>
+                                    <span>{day.toLocaleDateString(undefined, { weekday: 'short' })}</span>
+                                    <span className={`w-5 h-5 flex items-center justify-center rounded-full ${isToday ? 'bg-neon-500 text-dark-900' : ''}`}>{day.getDate()}</span>
+                                </div>
+                                <div className="space-y-1.5 flex-1 overflow-y-auto no-scrollbar max-h-[250px]">
                                     {dayTasks.map(t => (
-                                        <div key={t.id} className={`w-full h-1.5 rounded-full ${t.isCompleted ? 'bg-slate-700' : 'bg-neon-500'}`} title={t.title}></div>
+                                        <MiniTaskCard
+                                            key={t.id}
+                                            task={t}
+                                            onToggle={handleToggleTask}
+                                            onDelete={handleDeleteTask}
+                                            onEdit={handleEditTask}
+                                        />
                                     ))}
+                                    {dayTasks.length === 0 && <div className="text-[9px] text-slate-700 text-center py-2 italic font-light">Libre</div>}
                                 </div>
                             </div>
                         );
                     })}
-                </div>
-
-                <div className="bg-dark-900/50 rounded-2xl border border-dark-700 p-4">
-                    <h4 className="text-sm font-medium text-slate-300 mb-4 flex items-center gap-2">
-                        <CalendarIcon className="w-4 h-4 text-neon-500" />
-                        Tareas para el {selectedDate.toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' })}
-                    </h4>
-
-                    <div className="space-y-2">
-                        {selectedTasks.length === 0 ? (
-                            <div className="text-center py-6 text-slate-600 text-xs">No hay tareas programadas para este día</div>
-                        ) : (
-                            selectedTasks.map(task => (
-                                <MiniTaskCard
-                                    key={task.id}
-                                    task={task}
-                                    onToggle={handleToggleTask}
-                                    onDelete={handleDeleteTask}
-                                    onEdit={handleEditTask}
-                                />
-                            ))
-                        )}
-                    </div>
                 </div>
             </div>
         );

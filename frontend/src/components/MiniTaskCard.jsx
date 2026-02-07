@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
-import { Priority } from '../types';
-import { Eye, Pencil, X, Check, FileText } from 'lucide-react';
+import { Eye, Pencil, X, FileText } from 'lucide-react';
 
-const MiniTaskCard = ({ task, onToggle, onDelete, onEdit }) => {
+const MiniTaskCard = ({ task, onDelete, onEdit }) => {
     const [showNote, setShowNote] = useState(false);
 
     return (
@@ -15,14 +14,8 @@ const MiniTaskCard = ({ task, onToggle, onDelete, onEdit }) => {
     `}>
             {/* Title Row */}
             <div className="p-2.5">
-                <div className="flex items-start gap-2 mb-2">
-                    <button
-                        onClick={() => onToggle(task.id)}
-                        className={`mt-0.5 flex-shrink-0 w-4 h-4 rounded border flex items-center justify-center transition-colors ${task.isCompleted ? 'bg-neon-500 border-neon-500 text-dark-900' : 'border-slate-600'}`}
-                    >
-                        {task.isCompleted && <Check className="w-3 h-3 stroke-[3]" />}
-                    </button>
-                    <span className={`text-xs font-medium leading-tight ${task.isCompleted ? 'text-slate-500 line-through' : 'text-slate-200'}`}>
+                <div className="block mb-2">
+                    <span className={`text-xs font-medium leading-relaxed block ${task.isCompleted ? 'text-slate-500 line-through' : 'text-slate-200'}`}>
                         {task.title}
                     </span>
                 </div>

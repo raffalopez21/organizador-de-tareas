@@ -26,13 +26,10 @@ const TaskInput = ({ onSaveTask, taskToEdit, onCancelEdit }) => {
 
             if (taskToEdit.dueDate) {
                 const d = new Date(taskToEdit.dueDate);
-                // Format YYYY-MM-DD
                 const year = d.getFullYear();
                 const month = String(d.getMonth() + 1).padStart(2, '0');
                 const day = String(d.getDate()).padStart(2, '0');
                 setDate(`${year}-${month}-${day}`);
-
-                // Format HH:MM
                 setHour(String(d.getHours()).padStart(2, '0'));
                 setMinute(String(d.getMinutes()).padStart(2, '0'));
             } else {
@@ -40,9 +37,8 @@ const TaskInput = ({ onSaveTask, taskToEdit, onCancelEdit }) => {
                 setHour('');
                 setMinute('');
             }
-            setShowOptions(true); // Auto expand options when editing
+            setShowOptions(true);
         } else {
-            // Reset form if not editing
             setInput('');
             setNotes('');
             setDate('');
@@ -51,7 +47,6 @@ const TaskInput = ({ onSaveTask, taskToEdit, onCancelEdit }) => {
         }
     }, [taskToEdit]);
 
-    // Close dropdown when clicking outside
     useEffect(() => {
         const handleClickOutside = (event) => {
             if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -69,7 +64,6 @@ const TaskInput = ({ onSaveTask, taskToEdit, onCancelEdit }) => {
         const rawTitle = input.trim();
         const currentNotes = notes.trim();
 
-        // Parse due date
         let dueDate = null;
         if (date) {
             const timeStr = (hour !== '' && minute !== '') ? `${hour}:${minute}` : '12:00';
@@ -77,14 +71,12 @@ const TaskInput = ({ onSaveTask, taskToEdit, onCancelEdit }) => {
             dueDate = new Date(dateStr).getTime();
         }
 
-        // Common Task Data
         const baseData = {
             title: rawTitle,
             notes: currentNotes,
             dueDate: dueDate
         };
 
-        // Reset and close
         setInput('');
         setNotes('');
         setDate('');
@@ -92,17 +84,12 @@ const TaskInput = ({ onSaveTask, taskToEdit, onCancelEdit }) => {
         setMinute('');
         setShowOptions(false);
 
-        // Editing Flow - Skip AI
         if (taskToEdit) {
-            onSaveTask({
-                ...taskToEdit,
-                ...baseData,
-            });
+            onSaveTask({ ...taskToEdit, ...baseData });
             if (onCancelEdit) onCancelEdit();
             return;
         }
 
-        // Handle AI Logic inside handleSubmit so it saves the task
         if (useAI) {
             setIsProcessing(true);
             try {
@@ -126,18 +113,25 @@ const TaskInput = ({ onSaveTask, taskToEdit, onCancelEdit }) => {
         }
     };
 
+    const toggleAI = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (!taskToEdit) {
+            setUseAI(!useAI);
+        }
+    };
+
     return (
         <>
-            {/* Backdrop Blur Overlay when focused */}
             {showOptions && (
-                <div className="fixed inset-0 bg-dark-950/60 backdrop-blur-sm z-[35] transition-all animate-fade-in duration-300"></div>
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[35] transition-all animate-fade-in duration-300"></div>
             )}
 
             <div className="relative mb-8 group z-40" ref={dropdownRef}>
-                {/* Glow Effect */}
                 <div className={`absolute -inset-0.5 bg-gradient-to-r rounded-2xl opacity-20 group-hover:opacity-40 blur transition duration-500 ${taskToEdit ? 'from-blue-500 to-indigo-500' : 'from-neon-500/50 to-teal-500/50'}`}></div>
 
-                <div className={`relative bg-dark-950 border border-dark-700 shadow-2xl transition-all duration-300 rounded-2xl ${showOptions ? 'ring-2 ring-neon-500/20' : ''}`}>
+                {/* Using body background color #020617 for consistency */}
+                <div className={`relative bg-[#020617] border border-dark-700 shadow-2xl transition-all duration-300 rounded-2xl ${showOptions ? 'ring-2 ring-neon-500/20' : ''}`}>
                     <form onSubmit={handleSubmit} className="flex items-center">
                         <div className="pl-4 text-slate-500">
                             {taskToEdit ? <Pencil className="w-5 h-5 text-blue-400" /> : <Command className="w-5 h-5" />}
@@ -157,13 +151,8 @@ const TaskInput = ({ onSaveTask, taskToEdit, onCancelEdit }) => {
                             {taskToEdit && (
                                 <button
                                     type="button"
-                                    onClick={(e) => {
-                                        e.preventDefault();
-                                        onCancelEdit();
-                                        setShowOptions(false);
-                                    }}
+                                    onClick={() => { onCancelEdit(); setShowOptions(false); }}
                                     className="p-2 rounded-lg text-red-400 hover:bg-red-400/10 transition-colors mr-1"
-                                    title="Cancelar edición"
                                 >
                                     <X className="w-5 h-5" />
                                 </button>
@@ -177,13 +166,14 @@ const TaskInput = ({ onSaveTask, taskToEdit, onCancelEdit }) => {
                                 <CalendarIcon className="w-5 h-5" />
                             </button>
 
+                            {/* Corrected AI Toggle button - explicitly type="button" */}
                             <button
-                                type="submit"
-                                className={`p-2 rounded-lg transition-all duration-300 ${useAI ? 'text-neon-400 bg-neon-400/10' : 'text-slate-600 hover:text-slate-400'}`}
-                                title={useAI ? "Crear con análisis IA" : "Análisis IA desactivado"}
-                                onClick={() => !taskToEdit && setUseAI(!useAI)}
+                                type="button"
+                                onClick={toggleAI}
+                                className={`p-2 rounded-lg transition-all duration-300 ${useAI ? 'text-neon-400 bg-neon-500/20 shadow-[0_0_15px_rgba(16,185,129,0.2)]' : 'text-slate-600 hover:text-slate-400 bg-white/5'}`}
+                                title={useAI ? "Análisis IA ACTIVADO" : "Análisis IA DESACTIVADO"}
                             >
-                                <Sparkles className="w-5 h-5" />
+                                <Sparkles className={`w-5 h-5 ${useAI ? 'animate-pulse' : ''}`} />
                             </button>
 
                             <button
@@ -196,13 +186,8 @@ const TaskInput = ({ onSaveTask, taskToEdit, onCancelEdit }) => {
                         </div>
                     </form>
 
-                    {/* Menú Desplegable (Dropdown) Interior para mantener el fondo opaco unido */}
-                    <div className={`
-                        overflow-hidden transition-all duration-300 ease-in-out
-                        ${showOptions ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}
-                    `}>
+                    <div className={`overflow-hidden transition-all duration-300 ease-in-out ${showOptions ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}`}>
                         <div className="px-4 py-4 border-t border-dark-700 space-y-4">
-                            {/* Date & Time Row */}
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-1">
                                     <label className="text-[10px] text-slate-500 font-bold uppercase tracking-wider ml-1 flex items-center gap-1">
@@ -212,7 +197,7 @@ const TaskInput = ({ onSaveTask, taskToEdit, onCancelEdit }) => {
                                         type="date"
                                         value={date}
                                         onChange={(e) => setDate(e.target.value)}
-                                        className="w-full bg-dark-800 border border-dark-700 rounded-lg px-3 py-2 text-sm text-slate-200 focus:border-neon-500 outline-none transition-colors appearance-none"
+                                        className="w-full bg-dark-800 border border-dark-700 rounded-lg px-3 py-2 text-sm text-slate-200 focus:border-neon-500 outline-none transition-colors"
                                     />
                                 </div>
                                 <div className="space-y-1">
@@ -224,34 +209,27 @@ const TaskInput = ({ onSaveTask, taskToEdit, onCancelEdit }) => {
                                             <select
                                                 value={hour}
                                                 onChange={(e) => setHour(e.target.value)}
-                                                className="w-full bg-dark-800 border border-dark-700 rounded-lg pl-3 pr-8 py-2 text-sm text-slate-200 focus:border-neon-500 outline-none appearance-none transition-colors cursor-pointer"
+                                                className="w-full bg-dark-800 border border-dark-700 rounded-lg pl-2 pr-6 py-2 text-sm text-slate-100 outline-none cursor-pointer"
                                             >
-                                                <option value="" className="bg-dark-900 text-slate-200">--</option>
-                                                {HOURS.map(h => (
-                                                    <option key={h} value={h} className="bg-dark-900 text-slate-200">{h}</option>
-                                                ))}
+                                                <option value="">--</option>
+                                                {HOURS.map(h => <option key={h} value={h}>{h}</option>)}
                                             </select>
-                                            <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 pointer-events-none" />
                                         </div>
-                                        <div className="text-slate-600 flex items-center font-bold">:</div>
+                                        <div className="text-slate-600 flex items-center">:</div>
                                         <div className="relative flex-1">
                                             <select
                                                 value={minute}
                                                 onChange={(e) => setMinute(e.target.value)}
-                                                className="w-full bg-dark-800 border border-dark-700 rounded-lg pl-3 pr-8 py-2 text-sm text-slate-200 focus:border-neon-500 outline-none appearance-none transition-colors cursor-pointer"
+                                                className="w-full bg-dark-800 border border-dark-700 rounded-lg pl-2 pr-6 py-2 text-sm text-slate-100 outline-none cursor-pointer"
                                             >
-                                                <option value="" className="bg-dark-900 text-slate-200">--</option>
-                                                {MINUTES.map(m => (
-                                                    <option key={m} value={m} className="bg-dark-900 text-slate-200">{m}</option>
-                                                ))}
+                                                <option value="">--</option>
+                                                {MINUTES.map(m => <option key={m} value={m}>{m}</option>)}
                                             </select>
-                                            <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 pointer-events-none" />
                                         </div>
                                     </div>
                                 </div>
                             </div>
 
-                            {/* Notes Row */}
                             <div className="space-y-1">
                                 <label className="text-[10px] text-slate-500 font-bold uppercase tracking-wider ml-1 flex items-center gap-1">
                                     <FileText className="w-3 h-3" /> Notas / Descripción
@@ -261,18 +239,12 @@ const TaskInput = ({ onSaveTask, taskToEdit, onCancelEdit }) => {
                                     onChange={(e) => setNotes(e.target.value)}
                                     placeholder="Detalles adicionales para tildeAI..."
                                     rows={2}
-                                    className="w-full bg-dark-800 border border-dark-700 rounded-lg px-3 py-2 text-sm text-slate-200 focus:border-neon-500 outline-none transition-colors resize-none"
+                                    className="w-full bg-dark-800 border border-dark-700 rounded-lg px-3 py-2 text-sm text-slate-200 focus:border-neon-500 outline-none resize-none"
                                 />
                             </div>
                         </div>
                     </div>
                 </div>
-
-                {isProcessing && (
-                    <div className="absolute -bottom-1 left-0 right-0 h-[2px] bg-dark-800 rounded-full overflow-hidden z-50">
-                        <div className="h-full bg-neon-500 animate-[shimmer_1.5s_infinite_linear] w-1/3"></div>
-                    </div>
-                )}
             </div>
         </>
     );

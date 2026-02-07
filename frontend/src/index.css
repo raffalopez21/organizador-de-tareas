@@ -14,6 +14,18 @@ body {
   color: #e2e8f0;
 }
 
+/* Explicit fix for select dropdowns in browsers */
+select,
+option {
+  background-color: #0f172a !important;
+  color: #f1f5f9 !important;
+}
+
+select:focus {
+  outline: none;
+}
+
+
 /* Custom Scrollbar - More minimal */
 ::-webkit-scrollbar {
   width: 4px;

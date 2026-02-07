@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Sparkles, Plus, Loader2, Command, Calendar as CalendarIcon, FileText, X, Clock, ChevronDown, Save, Pencil } from 'lucide-react';
-import { breakdownTask } from '../services/geminiService';
+import { breakdownTask, isAIReady } from '../services/geminiService';
 
 // Generate time arrays
 const HOURS = Array.from({ length: 24 }, (_, i) => i.toString().padStart(2, '0'));
@@ -14,7 +14,7 @@ const TaskInput = ({ onSaveTask, taskToEdit, onCancelEdit }) => {
     const [minute, setMinute] = useState('');
 
     const [isProcessing, setIsProcessing] = useState(false);
-    const [useAI, setUseAI] = useState(true);
+    const [useAI, setUseAI] = useState(isAIReady);
     const [showOptions, setShowOptions] = useState(false);
     const dropdownRef = useRef(null);
 
@@ -170,10 +170,11 @@ const TaskInput = ({ onSaveTask, taskToEdit, onCancelEdit }) => {
                             <button
                                 type="button"
                                 onClick={toggleAI}
-                                className={`p-2 rounded-lg transition-all duration-300 ${useAI ? 'text-neon-400 bg-neon-500/20 shadow-[0_0_15px_rgba(16,185,129,0.2)]' : 'text-slate-600 hover:text-slate-400 bg-white/5'}`}
-                                title={useAI ? "Análisis IA ACTIVADO" : "Análisis IA DESACTIVADO"}
+                                disabled={!isAIReady}
+                                className={`p-2 rounded-lg transition-all duration-300 ${!isAIReady ? 'opacity-30 cursor-not-allowed grayscale' : useAI ? 'text-neon-400 bg-neon-500/20 shadow-[0_0_15px_rgba(16,185,129,0.2)]' : 'text-slate-600 hover:text-slate-400 bg-white/5'}`}
+                                title={!isAIReady ? "IA No configurada (Falta API Key)" : useAI ? "Análisis IA ACTIVADO" : "Análisis IA DESACTIVADO"}
                             >
-                                <Sparkles className={`w-5 h-5 ${useAI ? 'animate-pulse' : ''}`} />
+                                <Sparkles className={`w-5 h-5 ${useAI && isAIReady ? 'animate-pulse' : ''}`} />
                             </button>
 
                             <button

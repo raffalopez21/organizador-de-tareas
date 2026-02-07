@@ -4,6 +4,8 @@ import { GoogleGenAI } from "@google/genai";
 const apiKey = import.meta.env.VITE_API_KEY || '';
 const client = apiKey ? new GoogleGenAI({ apiKey }) : null;
 
+export const isAIReady = !!client;
+
 export const breakdownTask = async (taskTitle) => {
     if (!client) {
         console.warn("No API Key provided for Gemini");

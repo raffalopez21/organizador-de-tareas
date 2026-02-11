@@ -24,37 +24,35 @@ const MiniTaskCard = ({ task, onToggle, onDelete, onEdit }) => {
     `}>
             {/* Main Content Area */}
             <div className="p-2.5">
-                <div className="flex items-start gap-2">
-                    {/* Checkbox */}
-                    <button
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            onToggle(task.id);
-                        }}
-                        className={`mt-0.5 p-0.5 rounded transition-colors ${task.isCompleted ? 'text-neon-500 bg-neon-500/10' : 'text-slate-500 hover:text-neon-400'}`}
-                    >
-                        {task.isCompleted ? <CheckSquare className="w-4 h-4" /> : <Square className="w-4 h-4" />}
-                    </button>
-
-                    {/* Title and Time - Click to Toggle Note */}
-                    <div
-                        onClick={() => setShowNote(!showNote)}
-                        className="cursor-pointer mb-2 min-h-[1.5rem] flex-1 overflow-hidden"
-                    >
-                        <span className={`text-xs font-medium leading-relaxed block transition-colors ${task.isCompleted ? 'text-slate-500 line-through' : 'text-slate-200 group-hover/card:text-neon-400'}`}>
-                            {task.title}
+                {/* Title and Time - Click to Toggle Note */}
+                <div
+                    onClick={() => setShowNote(!showNote)}
+                    className="cursor-pointer mb-2 min-h-[1.5rem] flex-1 overflow-hidden"
+                >
+                    <span className={`text-xs font-medium leading-relaxed block transition-colors ${task.isCompleted ? 'text-slate-500 line-through' : 'text-slate-200 group-hover/card:text-neon-400'}`}>
+                        {task.title}
+                    </span>
+                    {formattedTime && (
+                        <span className="text-[10px] text-slate-500 flex items-center gap-1 mt-0.5 font-light">
+                            <Clock className="w-3 h-3" /> {formattedTime}
                         </span>
-                        {formattedTime && (
-                            <span className="text-[10px] text-slate-500 flex items-center gap-1 mt-0.5 font-light">
-                                <Clock className="w-3 h-3" /> {formattedTime}
-                            </span>
-                        )}
-                    </div>
+                    )}
                 </div>
 
                 {/* Footer Actions */}
                 <div className="flex items-center pt-1.5 border-t border-white/5 justify-end">
                     <div className="flex items-center gap-0.5">
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                onToggle(task.id);
+                            }}
+                            className={`p-1 rounded transition-colors ${task.isCompleted ? 'text-neon-500 bg-neon-500/10' : 'text-slate-500 hover:text-neon-400'}`}
+                            title={task.isCompleted ? "Marcar como pendiente" : "Marcar como completada"}
+                        >
+                            {task.isCompleted ? <CheckSquare className="w-3.5 h-3.5" /> : <Square className="w-3.5 h-3.5" />}
+                        </button>
+
                         <button
                             onClick={(e) => {
                                 e.stopPropagation();

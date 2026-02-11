@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Trash2, Calendar, Clock, Eye, Pencil } from 'lucide-react';
+import { Trash2, Calendar, Clock, Pencil, CheckSquare, Square } from 'lucide-react';
 
 // Formatting utilities
 const formatDate = (timestamp) => {
@@ -33,32 +33,32 @@ const TaskItem = React.memo(({ task, onToggle, onDelete, onEdit }) => {
 
                 <div className="p-4">
                     <div className="flex justify-between items-start gap-4">
-                        {/* Title - Click to Toggle */}
-                        <h3
-                            onClick={() => onToggle(task.id)}
-                            className={`
-                                text-base font-medium leading-tight truncate pr-2 transition-all duration-300 cursor-pointer select-none flex-1
-                                ${task.isCompleted ? 'text-slate-500 line-through decoration-slate-600' : 'text-slate-200 hover:text-neon-400'}
-                            `}
-                            title="Click para completar/desmarcar"
-                        >
-                            {task.title}
-                        </h3>
+                        {/* Checkbox and Title Row */}
+                        <div className="flex items-start gap-3 flex-1 overflow-hidden">
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    onToggle(task.id);
+                                }}
+                                className={`mt-0.5 p-0.5 rounded-md transition-colors ${task.isCompleted ? 'text-neon-500 bg-neon-500/10' : 'text-slate-500 hover:text-neon-400 hover:bg-neon-400/5'}`}
+                                title={task.isCompleted ? "Marcar como pendiente" : "Marcar como completada"}
+                            >
+                                {task.isCompleted ? <CheckSquare className="w-5 h-5" /> : <Square className="w-5 h-5" />}
+                            </button>
+
+                            <h3
+                                onClick={() => setShowNotes(!showNotes)}
+                                className={`
+                                    text-base font-medium leading-tight truncate transition-all duration-300 cursor-pointer select-none flex-1
+                                    ${task.isCompleted ? 'text-slate-500 line-through decoration-slate-600' : 'text-slate-200 hover:text-neon-400'}
+                                `}
+                                title="Ver detalles"
+                            >
+                                {task.title}
+                            </h3>
+                        </div>
 
                         <div className="flex items-center gap-2 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                            {task.notes && (
-                                <button
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        setShowNotes(!showNotes);
-                                    }}
-                                    className={`p-1.5 rounded-lg transition-colors ${showNotes ? 'text-neon-400 bg-neon-400/10' : 'text-slate-500 hover:text-slate-300'}`}
-                                    title="Ver nota"
-                                >
-                                    <Eye className="w-4 h-4" />
-                                </button>
-                            )}
-
                             <button
                                 onClick={(e) => {
                                     e.stopPropagation();
@@ -84,7 +84,7 @@ const TaskItem = React.memo(({ task, onToggle, onDelete, onEdit }) => {
                     </div>
 
                     {/* Metadata Row: Date, Notes Toggle indicator */}
-                    <div className="flex items-center gap-3 mt-2 min-h-[20px]">
+                    <div className="flex items-center gap-3 mt-2 min-h-[20px] ml-8">
                         {formattedDate && (
                             <div className="flex items-center gap-1 text-[11px] text-neon-400/80 font-medium">
                                 <Calendar className="w-3 h-3" />
@@ -100,7 +100,7 @@ const TaskItem = React.memo(({ task, onToggle, onDelete, onEdit }) => {
 
                     {/* Notes Section (Toggleable) */}
                     {showNotes && task.notes && (
-                        <div className="mt-3 text-sm text-slate-400 font-light whitespace-pre-wrap leading-relaxed border-l-2 border-neon-500/30 pl-3 py-1 bg-white/5 rounded-r-lg animate-fade-in italic">
+                        <div className="mt-3 text-sm text-slate-400 font-light whitespace-pre-wrap leading-relaxed border-l-2 border-neon-500/30 pl-3 py-1 bg-white/5 rounded-r-lg animate-fade-in italic ml-8">
                             {task.notes}
                         </div>
                     )}

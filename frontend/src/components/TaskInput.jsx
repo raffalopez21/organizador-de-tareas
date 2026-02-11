@@ -9,9 +9,26 @@ const MINUTES = Array.from({ length: 60 }, (_, i) => i.toString().padStart(2, '0
 const TaskInput = ({ onSaveTask, taskToEdit, onCancelEdit }) => {
     const [input, setInput] = useState('');
     const [notes, setNotes] = useState('');
-    const [date, setDate] = useState('');
-    const [hour, setHour] = useState('');
-    const [minute, setMinute] = useState('');
+
+    // Helper to get current time components
+    const getCurrentTime = () => {
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        const hour = String(now.getHours()).padStart(2, '0');
+        const minute = String(now.getMinutes()).padStart(2, '0');
+        return {
+            date: `${year}-${month}-${day}`,
+            hour,
+            minute
+        };
+    };
+
+    const initialTime = getCurrentTime();
+    const [date, setDate] = useState(initialTime.date);
+    const [hour, setHour] = useState(initialTime.hour);
+    const [minute, setMinute] = useState(initialTime.minute);
 
     const [isProcessing, setIsProcessing] = useState(false);
     const [useAI, setUseAI] = useState(isAIReady);
@@ -33,17 +50,19 @@ const TaskInput = ({ onSaveTask, taskToEdit, onCancelEdit }) => {
                 setHour(String(d.getHours()).padStart(2, '0'));
                 setMinute(String(d.getMinutes()).padStart(2, '0'));
             } else {
-                setDate('');
-                setHour('');
-                setMinute('');
+                const now = getCurrentTime();
+                setDate(now.date);
+                setHour(now.hour);
+                setMinute(now.minute);
             }
             setShowOptions(true);
         } else {
             setInput('');
             setNotes('');
-            setDate('');
-            setHour('');
-            setMinute('');
+            const now = getCurrentTime();
+            setDate(now.date);
+            setHour(now.hour);
+            setMinute(now.minute);
         }
     }, [taskToEdit]);
 
@@ -79,9 +98,10 @@ const TaskInput = ({ onSaveTask, taskToEdit, onCancelEdit }) => {
 
         setInput('');
         setNotes('');
-        setDate('');
-        setHour('');
-        setMinute('');
+        const now = getCurrentTime();
+        setDate(now.date);
+        setHour(now.hour);
+        setMinute(now.minute);
         setShowOptions(false);
 
         if (taskToEdit) {

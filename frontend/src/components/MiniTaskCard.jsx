@@ -1,8 +1,18 @@
 import React, { useState } from 'react';
-import { Eye, Pencil, X, FileText } from 'lucide-react';
+import { Pencil, X, FileText, CheckSquare, Square, Clock } from 'lucide-react';
 
 const MiniTaskCard = ({ task, onToggle, onDelete, onEdit }) => {
     const [showNote, setShowNote] = useState(false);
+
+    const formatTime = (timestamp) => {
+        if (!timestamp) return null;
+        const date = new Date(timestamp);
+        // If it's exactly midnight or 12:00, we check if it's likely a date-only task
+        // but typically we just show the time if scheduled.
+        return date.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+    };
+
+    const formattedTime = formatTime(task.dueDate);
 
     return (
         <div className={`
@@ -14,31 +24,36 @@ const MiniTaskCard = ({ task, onToggle, onDelete, onEdit }) => {
     `}>
             {/* Main Content Area */}
             <div className="p-2.5">
-                {/* Title - Click to Toggle */}
-                <div
-                    onClick={() => onToggle(task.id)}
-                    className="cursor-pointer mb-2 min-h-[1.5rem]"
-                >
-                    <span className={`text-xs font-medium leading-relaxed block transition-colors ${task.isCompleted ? 'text-slate-500 line-through' : 'text-slate-200 group-hover/card:text-neon-400'}`}>
-                        {task.title}
-                    </span>
+                <div className="flex items-start gap-2">
+                    {/* Checkbox */}
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            onToggle(task.id);
+                        }}
+                        className={`mt-0.5 p-0.5 rounded transition-colors ${task.isCompleted ? 'text-neon-500 bg-neon-500/10' : 'text-slate-500 hover:text-neon-400'}`}
+                    >
+                        {task.isCompleted ? <CheckSquare className="w-4 h-4" /> : <Square className="w-4 h-4" />}
+                    </button>
+
+                    {/* Title and Time - Click to Toggle Note */}
+                    <div
+                        onClick={() => setShowNote(!showNote)}
+                        className="cursor-pointer mb-2 min-h-[1.5rem] flex-1 overflow-hidden"
+                    >
+                        <span className={`text-xs font-medium leading-relaxed block transition-colors ${task.isCompleted ? 'text-slate-500 line-through' : 'text-slate-200 group-hover/card:text-neon-400'}`}>
+                            {task.title}
+                        </span>
+                        {formattedTime && (
+                            <span className="text-[10px] text-slate-500 flex items-center gap-1 mt-0.5 font-light">
+                                <Clock className="w-3 h-3" /> {formattedTime}
+                            </span>
+                        )}
+                    </div>
                 </div>
 
                 {/* Footer Actions */}
-                <div className={`flex items-center pt-1.5 border-t border-white/5 ${task.notes ? 'justify-between' : 'justify-end'}`}>
-                    {task.notes && (
-                        <button
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                setShowNote(!showNote);
-                            }}
-                            className={`p-1 rounded hover:bg-neon-500/10 transition-colors ${showNote ? 'text-neon-400' : 'text-slate-500 hover:text-neon-400'}`}
-                            title="Ver nota"
-                        >
-                            <Eye className="w-3.5 h-3.5" />
-                        </button>
-                    )}
-
+                <div className="flex items-center pt-1.5 border-t border-white/5 justify-end">
                     <div className="flex items-center gap-0.5">
                         <button
                             onClick={(e) => {

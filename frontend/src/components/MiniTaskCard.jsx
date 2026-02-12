@@ -9,7 +9,7 @@ const MiniTaskCard = ({ task, onToggle, onDelete, onEdit }) => {
         const date = new Date(timestamp);
         // If it's exactly midnight or 12:00, we check if it's likely a date-only task
         // but typically we just show the time if scheduled.
-        return date.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+        return date.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', hour12: false });
     };
 
     const formattedTime = formatTime(task.dueDate);

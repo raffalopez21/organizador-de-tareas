@@ -10,7 +10,7 @@ const formatTime = (timestamp) => {
     if (!timestamp) return null;
     const date = new Date(timestamp);
     if (date.getHours() === 12 && date.getMinutes() === 0) return null; // Assume default noon is unset time
-    return date.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+    return date.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', hour12: false });
 };
 
 const TaskItem = React.memo(({ task, onToggle, onDelete, onEdit }) => {

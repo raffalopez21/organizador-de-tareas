@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Trash2, Calendar, Clock, Pencil, CheckSquare, Square } from 'lucide-react';
 
 // Formatting utilities
@@ -18,6 +18,11 @@ const TaskItem = React.memo(({ task, onToggle, onDelete, onEdit }) => {
     const formattedDate = formatDate(task.dueDate);
     const formattedTime = formatTime(task.dueDate);
 
+    const isOverdue = useMemo(() => {
+        if (!task.dueDate || task.isCompleted) return false;
+        return new Date(task.dueDate).getTime() < new Date().getTime();
+    }, [task.dueDate, task.isCompleted]);
+
     return (
         <div
             className={`group relative mb-3 transition-all duration-300 ease-out 
@@ -27,9 +32,16 @@ const TaskItem = React.memo(({ task, onToggle, onDelete, onEdit }) => {
                 relative overflow-hidden rounded-xl border backdrop-blur-md transition-all duration-300
                 ${task.isCompleted
                     ? 'bg-dark-900/40 border-dark-700/50'
-                    : 'bg-dark-800 border-dark-700 hover:border-neon-500/30 hover:shadow-[0_4px_20px_-4px_rgba(16,185,129,0.15)]'
+                    : isOverdue
+                        ? 'bg-red-500/5 border-red-500/30 hover:border-red-500/50 shadow-[0_0_20px_-10px_rgba(239,68,68,0.3)]'
+                        : 'bg-dark-800 border-dark-700 hover:border-neon-500/30 hover:shadow-[0_4px_20px_-4px_rgba(16,185,129,0.15)]'
                 }
             `}>
+                {isOverdue && !task.isCompleted && (
+                    <div className="absolute top-0 right-0 px-2 py-0.5 bg-red-500/20 text-red-400 text-[9px] font-bold uppercase tracking-wider rounded-bl-lg border-l border-b border-red-500/30 animate-pulse">
+                        Vencida
+                    </div>
+                )}
 
                 <div className="p-4">
                     <div className="flex justify-between items-start gap-4">

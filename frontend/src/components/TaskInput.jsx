@@ -10,14 +10,19 @@ const TaskInput = ({ onSaveTask, taskToEdit, onCancelEdit }) => {
     const [input, setInput] = useState('');
     const [notes, setNotes] = useState('');
 
-    // Helper to get current time components
+    // Helper to get professional default time (next full hour)
     const getCurrentTime = () => {
         const now = new Date();
-        const year = now.getFullYear();
-        const month = String(now.getMonth() + 1).padStart(2, '0');
-        const day = String(now.getDate()).padStart(2, '0');
-        const hour = String(now.getHours()).padStart(2, '0');
-        const minute = String(now.getMinutes()).padStart(2, '0');
+        // Professional apps typically suggest the next full hour
+        const nextHour = new Date(now);
+        nextHour.setHours(now.getHours() + 1);
+        nextHour.setMinutes(0);
+
+        const year = nextHour.getFullYear();
+        const month = String(nextHour.getMonth() + 1).padStart(2, '0');
+        const day = String(nextHour.getDate()).padStart(2, '0');
+        const hour = String(nextHour.getHours()).padStart(2, '0');
+        const minute = String(nextHour.getMinutes()).padStart(2, '0');
         return {
             date: `${year}-${month}-${day}`,
             hour,
